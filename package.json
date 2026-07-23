@@ -1,0 +1,16 @@
+{
+  "name": "eduone",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev:web": "npm --prefix apps/web run dev",
+    "build:web": "npm --prefix apps/web run build",
+    "start:web": "npm --prefix apps/web run start",
+    "dev:api": "npm --prefix apps/api run dev",
+    "typecheck:web": "npm --prefix apps/web run typecheck",
+    "lint:web": "npm --prefix apps/web run lint"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}
