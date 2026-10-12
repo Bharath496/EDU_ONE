@@ -137,17 +137,15 @@ export function Sidebar({ isOpen, onClose, onToggleCollapse, collapsed = false }
           >
             <X className="w-5 h-5" />
           </Button>
-          {!collapsed && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="hidden lg:flex"
-              onClick={onToggleCollapse}
-              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            >
-              {collapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
-            </Button>
-          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden lg:flex"
+            onClick={onToggleCollapse}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {collapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+          </Button>
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1" role="navigation" aria-label="Main navigation">
@@ -202,7 +200,7 @@ export function Sidebar({ isOpen, onClose, onToggleCollapse, collapsed = false }
               {navItems
                 .filter((item) => !['/admin', '/admin/colleges', '/admin/users', '/admin/billing', '/admin/analytics', '/admin/settings'].includes(item.href))
                 .map((item) => {
-                  const Icon = getIcon(item.icon)
+                  const Icon = item.icon
                   return (
                     <Link
                       key={item.href}
@@ -233,19 +231,21 @@ export function Sidebar({ isOpen, onClose, onToggleCollapse, collapsed = false }
           {isCollegeAdmin && (
             <>
               <div className="pt-4 pb-2 px-3">
-                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Quick Actions</h3>
+                <h3 className={cn('text-xs font-semibold text-slate-500 uppercase tracking-wider', collapsed && 'hidden')}>Quick Actions</h3>
               </div>
               {quickActions.slice(0, 4).map((action) => (
                 <Link
                   key={action.href}
                   href={action.href}
                   className={cn(
-                    'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors'
+                    'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors',
+                    collapsed && 'justify-center px-2'
                   )}
                   onClick={onClose}
+                  title={collapsed ? action.label : undefined}
                 >
-                  <span className="w-5 h-5 flex-shrink-0" />
-                  <span className="truncate">{action.label}</span>
+                  <action.icon className="w-5 h-5 flex-shrink-0" />
+                  {!collapsed && <span className="truncate">{action.label}</span>}
                 </Link>
               ))}
             </>
