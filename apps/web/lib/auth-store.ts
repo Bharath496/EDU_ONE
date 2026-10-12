@@ -7,6 +7,7 @@ interface AuthState {
   refreshToken: string | null
   isAuthenticated: boolean
   isLoading: boolean
+  hydrate: () => void
   setAuth: (session: Session) => void
   setUser: (user: User) => void
   clearAuth: () => void
@@ -15,32 +16,42 @@ interface AuthState {
   hasPermission: (permission: string) => boolean
 }
 
-function getStoredAuth(): Partial<AuthState> {
-  if (typeof window === 'undefined') return { isLoading: false }
-  try {
-    const storedUser = localStorage.getItem('user')
-    const storedToken = localStorage.getItem('access_token')
-    const storedRefreshToken = localStorage.getItem('refresh_token')
-    if (storedUser && storedToken) {
-      return {
-        user: JSON.parse(storedUser),
-        token: storedToken,
-        refreshToken: storedRefreshToken,
-        isAuthenticated: true,
-        isLoading: false,
-      }
-    }
-  } catch {}
-  return { isLoading: false }
-}
-
 export const useAuthStore = create<AuthState>()((set, get) => ({
   user: null,
   token: null,
   refreshToken: null,
   isAuthenticated: false,
   isLoading: true,
-  ...getStoredAuth(),
+
+  hydrate: () => {
+    if (typeof window === 'undefined') return
+    try {
+      const storedUser = localStorage.getItem('user')
+      const storedToken = localStorage.getItem('access_token')
+      const storedRefreshToken = localStorage.getItem('refresh_token')
+      if (storedUser && storedToken) {
+        set({
+          user: JSON.parse(storedUser),
+          token: storedToken,
+          refreshToken: storedRefreshToken,
+          isAuthenticated: true,
+          isLoading: false,
+        })
+        return
+      }
+    } catch {
+      localStorage.removeItem('user')
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('refresh_token')
+    }
+    set({
+      user: null,
+      token: null,
+      refreshToken: null,
+      isAuthenticated: false,
+      isLoading: false,
+    })
+  },
 
   setAuth: (session: Session) => {
     set({
@@ -65,7 +76,13 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   },
 
   clearAuth: () => {
-    set({ user: null, token: null, refreshToken: null, isAuthenticated: false, isLoading: false })
+    set({
+      user: null,
+      token: null,
+      refreshToken: null,
+      isAuthenticated: false,
+      isLoading: false,
+    })
     if (typeof window !== 'undefined') {
       localStorage.removeItem('access_token')
       localStorage.removeItem('refresh_token')
@@ -85,11 +102,18 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   hasPermission: (permission: string) => {
     const user = get().user
     if (!user) return false
-    if (user.role === 'Super Admin') return true
-    if (user.role === 'College Admin') return true
-    if (user.role === 'Faculty') return ['attendance.read', 'attendance.write', 'marks.read', 'marks.write', 'assignments.read', 'assignments.write'].includes(permission)
-    if (user.role === 'Student') return permission.endsWith('.read')
-    if (user.role === 'Parent') return permission.endsWith('.read')
+    if (user.role === 'Super Admin' || user.role === 'College Admin') return true
+    if (user.role === 'Faculty') {
+      return [
+        'attendance.read',
+        'attendance.write',
+        'marks.read',
+        'marks.write',
+        'assignments.read',
+        'assignments.write',
+      ].includes(permission)
+    }
+    if (user.role === 'Student' || user.role === 'Parent') return permission.endsWith('.read')
     return false
   },
 }))
