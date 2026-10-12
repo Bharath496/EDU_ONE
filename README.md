@@ -220,21 +220,17 @@ npm run test:api
 
 The repository also runs these checks automatically through GitHub Actions.
 
-## Deployment
+## GitHub Pages deployment
 
-The web project is suitable for a Vercel portfolio deployment with the project root set to:
-
-```text
-apps/web
-```
-
-The repository currently records this portfolio URL:
+The live portfolio website is deployed directly from this repository with GitHub Actions and GitHub Pages.
 
 ```text
-https://edu-one-eta.vercel.app
+https://bharath496.github.io/EDU_ONE/
 ```
 
-The API can be run locally or deployed separately to any compatible Python host. A deployed web app can point to it through `NEXT_PUBLIC_API_URL`.
+The Next.js frontend uses static export, the repository base path `/EDU_ONE`, and browser-persisted demo data. That means the hosted portfolio does not require Vercel, a paid database, or a backend server for its main interactive workflows.
+
+The optional FastAPI project remains in `apps/api` for backend/API demonstration and local development. It can be deployed separately later if a persistent hosted API is needed.
 
 ## Project structure
 
