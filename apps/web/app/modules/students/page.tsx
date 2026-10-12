@@ -1,175 +1,354 @@
 'use client'
 
-import { useState } from 'react'
+import { FormEvent, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
-import { Badge } from '@/components/ui/Badge'
+import {
+  CalendarCheck,
+  Download,
+  GraduationCap,
+  Mail,
+  MoreHorizontal,
+  Pencil,
+  Phone,
+  Plus,
+  Search,
+  Trash2,
+  UserCheck,
+} from 'lucide-react'
 import { Avatar } from '@/components/ui/Avatar'
+import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { Card, CardContent } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
+import { Modal } from '@/components/ui/Modal'
 import { useAuthStore } from '@/lib/auth-store'
-import { GraduationCap, Search, Filter, Plus, ChevronRight, Download, Mail, Phone, Calendar, BookOpen, MoreHorizontal, UserCheck } from 'lucide-react'
+import { useEduStore } from '@/lib/edu-store'
+import type { StudentRecord } from '@/lib/demo-data'
 
-const STUDENTS = [
-  { id: '1', name: 'Arjun Kumar', regNo: '23CS001', department: 'Computer Science', semester: 3, batch: '2023-27', email: 'arjun.k@psgct.edu', phone: '+91 98765 40001', attendance: 94, cgpa: 8.7, status: 'active', avatar: '' },
-  { id: '2', name: 'Priya Sharma', regNo: '23CS002', department: 'Computer Science', semester: 3, batch: '2023-27', email: 'priya.s@psgct.edu', phone: '+91 98765 40002', attendance: 92, cgpa: 9.1, status: 'active', avatar: '' },
-  { id: '3', name: 'Rahul Verma', regNo: '23EC003', department: 'Electronics', semester: 3, batch: '2023-27', email: 'rahul.v@psgct.edu', phone: '+91 98765 40003', attendance: 78, cgpa: 7.2, status: 'active', avatar: '' },
-  { id: '4', name: 'Sneha Patel', regNo: '23ME004', department: 'Mechanical', semester: 5, batch: '2022-26', email: 'sneha.p@psgct.edu', phone: '+91 98765 40004', attendance: 96, cgpa: 8.9, status: 'active', avatar: '' },
-  { id: '5', name: 'Vikram Singh', regNo: '23CS005', department: 'Computer Science', semester: 3, batch: '2023-27', email: 'vikram.s@psgct.edu', phone: '+91 98765 40005', attendance: 45, cgpa: 5.8, status: 'inactive', avatar: '' },
-  { id: '6', name: 'Ananya Gupta', regNo: '23BT006', department: 'Biotech', semester: 3, batch: '2023-27', email: 'ananya.g@psgct.edu', phone: '+91 98765 40006', attendance: 88, cgpa: 8.4, status: 'active', avatar: '' },
-  { id: '7', name: 'Rohit Joshi', regNo: '23CS007', department: 'Computer Science', semester: 5, batch: '2022-26', email: 'rohit.j@psgct.edu', phone: '+91 98765 40007', attendance: 91, cgpa: 8.2, status: 'active', avatar: '' },
-  { id: '8', name: 'Neha Kapoor', regNo: '23EC008', department: 'Electronics', semester: 3, batch: '2023-27', email: 'neha.k@psgct.edu', phone: '+91 98765 40008', attendance: 85, cgpa: 7.9, status: 'active', avatar: '' },
-]
+type StudentForm = Omit<StudentRecord, 'id'>
+
+const emptyForm: StudentForm = {
+  name: '',
+  regNo: '',
+  department: 'AIML',
+  semester: 1,
+  batch: '2026-29',
+  email: '',
+  phone: '',
+  attendance: 100,
+  cgpa: 0,
+  status: 'active',
+}
+
+function toCsv(rows: StudentRecord[]) {
+  const header = ['Reg No', 'Name', 'Department', 'Semester', 'Batch', 'Email', 'Phone', 'Attendance', 'CGPA', 'Status']
+  const body = rows.map((student) => [
+    student.regNo,
+    student.name,
+    student.department,
+    student.semester,
+    student.batch,
+    student.email,
+    student.phone,
+    student.attendance,
+    student.cgpa,
+    student.status,
+  ])
+  return [header, ...body]
+    .map((row) => row.map((value) => `"${String(value).replaceAll('"', '""')}"`).join(','))
+    .join('\n')
+}
+
+function downloadCsv(rows: StudentRecord[]) {
+  const blob = new Blob([toCsv(rows)], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = 'eduone-students.csv'
+  anchor.click()
+  URL.revokeObjectURL(url)
+}
 
 export default function StudentsPage() {
   const { user, isAuthenticated } = useAuthStore()
   const router = useRouter()
+  const students = useEduStore((state) => state.students)
+  const addStudent = useEduStore((state) => state.addStudent)
+  const updateStudent = useEduStore((state) => state.updateStudent)
+  const removeStudent = useEduStore((state) => state.removeStudent)
+
   const [search, setSearch] = useState('')
-  const [filterDept, setFilterDept] = useState('All')
+  const [department, setDepartment] = useState('All')
+  const [status, setStatus] = useState('All')
+  const [formOpen, setFormOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [form, setForm] = useState<StudentForm>(emptyForm)
 
-  if (!isAuthenticated || !user) { router.push('/login'); return null }
+  if (!isAuthenticated || !user) {
+    router.push('/login')
+    return null
+  }
 
-  const filtered = STUDENTS.filter(s => {
-    const matchesSearch = s.name.toLowerCase().includes(search.toLowerCase()) || s.regNo.toLowerCase().includes(search.toLowerCase()) || s.email.toLowerCase().includes(search.toLowerCase())
-    const matchesDept = filterDept === 'All' || s.department === filterDept
-    return matchesSearch && matchesDept
-  })
+  const departments = ['All', ...Array.from(new Set(students.map((item) => item.department))).sort()]
 
-  const departments = [...new Set(STUDENTS.map(s => s.department))]
+  const filtered = useMemo(() => {
+    const needle = search.trim().toLowerCase()
+    return students.filter((student) => {
+      const matchesSearch =
+        !needle ||
+        student.name.toLowerCase().includes(needle) ||
+        student.regNo.toLowerCase().includes(needle) ||
+        student.email.toLowerCase().includes(needle)
+      const matchesDepartment = department === 'All' || student.department === department
+      const matchesStatus = status === 'All' || student.status === status.toLowerCase()
+      return matchesSearch && matchesDepartment && matchesStatus
+    })
+  }, [department, search, status, students])
 
-  const activeCount = STUDENTS.filter(s => s.status === 'active').length
-  const avgAttendance = Math.round(STUDENTS.reduce((sum, s) => sum + s.attendance, 0) / STUDENTS.length)
+  const activeCount = students.filter((item) => item.status === 'active').length
+  const avgAttendance = students.length
+    ? Math.round(students.reduce((sum, item) => sum + item.attendance, 0) / students.length)
+    : 0
+  const atRisk = students.filter((item) => item.attendance < 75 || item.cgpa < 6).length
+
+  const openCreate = () => {
+    setEditingId(null)
+    setForm(emptyForm)
+    setFormOpen(true)
+  }
+
+  const openEdit = (student: StudentRecord) => {
+    const { id, ...rest } = student
+    setEditingId(id)
+    setForm(rest)
+    setFormOpen(true)
+  }
+
+  const submit = (event: FormEvent) => {
+    event.preventDefault()
+    const normalized: StudentForm = {
+      ...form,
+      name: form.name.trim(),
+      regNo: form.regNo.trim().toUpperCase(),
+      email: form.email.trim().toLowerCase(),
+      phone: form.phone.trim(),
+      semester: Number(form.semester),
+      attendance: Number(form.attendance),
+      cgpa: Number(form.cgpa),
+    }
+    if (!normalized.name || !normalized.regNo || !normalized.email) return
+    if (editingId) updateStudent(editingId, normalized)
+    else addStudent(normalized)
+    setFormOpen(false)
+  }
+
+  const deleteStudent = (student: StudentRecord) => {
+    if (window.confirm(`Remove ${student.name} (${student.regNo}) from the demo workspace?`)) {
+      removeStudent(student.id)
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-slate-200">
-        <div className="flex h-16 items-center justify-between px-4 lg:px-6">
-          <div>
-            <p className="text-sm text-slate-500">{user.collegeName}</p>
-            <h1 className="text-xl font-bold text-slate-900">Students</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" className="gap-2">
-              <Download className="w-4 h-4" />
-              Export
-            </Button>
-            <Button variant="primary" size="sm" className="gap-2">
-              <Plus className="w-4 h-4" />
-              Add Student
-            </Button>
-          </div>
+    <div className="space-y-6 p-4 lg:p-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-sm font-medium text-primary-600">{user.collegeName}</p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">Student Records</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Persistent local demo data. Add, edit, filter and export without a paid database.
+          </p>
         </div>
-      </header>
-
-      <div className="p-4 lg:p-6 space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-blue-100 text-blue-700"><GraduationCap className="w-6 h-6" /></div>
-              <div>
-                <p className="text-sm text-slate-500">Total Students</p>
-                <p className="text-2xl font-bold text-slate-900">{STUDENTS.length}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-green-100 text-green-700"><UserCheck className="w-6 h-6" /></div>
-              <div>
-                <p className="text-sm text-slate-500">Active</p>
-                <p className="text-2xl font-bold text-slate-900">{activeCount}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-purple-100 text-purple-700"><Calendar className="w-6 h-6" /></div>
-              <div>
-                <p className="text-sm text-slate-500">Avg Attendance</p>
-                <p className="text-2xl font-bold text-slate-900">{avgAttendance}%</p>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" className="gap-2" onClick={() => downloadCsv(filtered)}>
+            <Download className="h-4 w-4" />
+            Export CSV
+          </Button>
+          <Button size="sm" className="gap-2" onClick={openCreate}>
+            <Plus className="h-4 w-4" />
+            Add Student
+          </Button>
         </div>
-
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-          <div className="flex gap-3 flex-1 max-w-md">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-              <input type="text" placeholder="Search by name, reg no, or email..." value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
-            </div>
-          </div>
-          <div className="flex gap-2">
-            {['All', ...departments].map(d => (
-              <button key={d} onClick={() => setFilterDept(d)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${filterDept === d ? 'bg-primary-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}>{d === 'All' ? 'All' : d}</button>
-            ))}
-          </div>
-        </div>
-
-        <Card>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-100">
-                    <th className="text-left py-3 px-4 font-medium text-slate-500">Student</th>
-                    <th className="text-left py-3 px-4 font-medium text-slate-500">Reg No</th>
-                    <th className="text-left py-3 px-4 font-medium text-slate-500">Department</th>
-                    <th className="text-center py-3 px-4 font-medium text-slate-500">Sem</th>
-                    <th className="text-center py-3 px-4 font-medium text-slate-500">Attendance</th>
-                    <th className="text-center py-3 px-4 font-medium text-slate-500">CGPA</th>
-                    <th className="text-left py-3 px-4 font-medium text-slate-500">Status</th>
-                    <th className="w-10 py-3 px-4" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map(s => (
-                    <tr key={s.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-3">
-                          <Avatar name={s.name} size="sm" />
-                          <div>
-                            <p className="font-medium text-slate-900">{s.name}</p>
-                            <p className="text-xs text-slate-500">{s.email}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 text-xs font-mono text-slate-600">{s.regNo}</td>
-                      <td className="py-3 px-4 text-slate-600">{s.department}</td>
-                      <td className="py-3 px-4 text-center text-slate-600">{s.semester}</td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2 justify-center">
-                          <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                            <div className={`h-full rounded-full ${s.attendance >= 75 ? 'bg-green-500' : s.attendance >= 50 ? 'bg-amber-500' : 'bg-red-500'}`} style={{ width: `${s.attendance}%` }} />
-                          </div>
-                          <span className={`text-xs font-medium ${s.attendance >= 75 ? 'text-green-600' : s.attendance >= 50 ? 'text-amber-600' : 'text-red-600'}`}>{s.attendance}%</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <span className={`text-sm font-medium ${s.cgpa >= 8 ? 'text-green-600' : s.cgpa >= 6 ? 'text-amber-600' : 'text-red-600'}`}>{s.cgpa}</span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <Badge variant={s.status === 'active' ? 'success' : 'danger'} size="sm">{s.status}</Badge>
-                      </td>
-                      <td className="py-3 px-4">
-                        <button className="p-1 rounded-lg hover:bg-slate-100 text-slate-400"><MoreHorizontal className="w-5 h-5" /></button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {filtered.length === 0 && (
-              <div className="text-center py-12">
-                <GraduationCap className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-slate-900">No students found</h3>
-                <p className="text-sm text-slate-500 mt-1">Try adjusting your search or filters</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {[
+          { label: 'Total students', value: students.length, icon: GraduationCap, className: 'bg-blue-50 text-blue-700' },
+          { label: 'Active', value: activeCount, icon: UserCheck, className: 'bg-emerald-50 text-emerald-700' },
+          { label: 'Average attendance', value: `${avgAttendance}%`, icon: CalendarCheck, className: 'bg-violet-50 text-violet-700' },
+          { label: 'Needs attention', value: atRisk, icon: MoreHorizontal, className: 'bg-amber-50 text-amber-700' },
+        ].map((item) => (
+          <Card key={item.label}>
+            <CardContent className="flex items-center gap-4 p-5">
+              <div className={`rounded-2xl p-3 ${item.className}`}>
+                <item.icon className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-500">{item.label}</p>
+                <p className="text-2xl font-bold text-slate-950">{item.value}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Card>
+        <CardContent className="p-4">
+          <div className="grid gap-3 lg:grid-cols-[1fr_220px_180px]">
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search name, register number or email"
+              leftIcon={<Search className="h-4 w-4 text-slate-400" />}
+            />
+            <select
+              value={department}
+              onChange={(event) => setDepartment(event.target.value)}
+              className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
+            >
+              {departments.map((item) => <option key={item}>{item}</option>)}
+            </select>
+            <select
+              value={status}
+              onChange={(event) => setStatus(event.target.value)}
+              className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
+            >
+              <option>All</option>
+              <option>Active</option>
+              <option>Inactive</option>
+            </select>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[1000px] text-sm">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-50/80 text-left text-slate-500">
+                  <th className="px-4 py-3 font-medium">Student</th>
+                  <th className="px-4 py-3 font-medium">Register no.</th>
+                  <th className="px-4 py-3 font-medium">Department</th>
+                  <th className="px-4 py-3 text-center font-medium">Sem</th>
+                  <th className="px-4 py-3 text-center font-medium">Attendance</th>
+                  <th className="px-4 py-3 text-center font-medium">CGPA</th>
+                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 text-right font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((student) => (
+                  <tr key={student.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/70">
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-3">
+                        <Avatar name={student.name} size="sm" />
+                        <div>
+                          <p className="font-semibold text-slate-900">{student.name}</p>
+                          <div className="mt-0.5 flex items-center gap-3 text-xs text-slate-500">
+                            <span className="flex items-center gap-1"><Mail className="h-3 w-3" />{student.email}</span>
+                            <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{student.phone}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 font-mono text-xs text-slate-600">{student.regNo}</td>
+                    <td className="px-4 py-4 text-slate-600">{student.department}</td>
+                    <td className="px-4 py-4 text-center text-slate-600">{student.semester}</td>
+                    <td className="px-4 py-4">
+                      <div className="mx-auto flex w-28 items-center gap-2">
+                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100">
+                          <div
+                            className={`h-full rounded-full ${student.attendance >= 75 ? 'bg-emerald-500' : student.attendance >= 60 ? 'bg-amber-500' : 'bg-red-500'}`}
+                            style={{ width: `${Math.min(student.attendance, 100)}%` }}
+                          />
+                        </div>
+                        <span className="w-9 text-right text-xs font-semibold text-slate-700">{student.attendance}%</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 text-center">
+                      <span className={`font-semibold ${student.cgpa >= 8 ? 'text-emerald-700' : student.cgpa >= 6 ? 'text-amber-700' : 'text-red-700'}`}>
+                        {student.cgpa.toFixed(1)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <button
+                        onClick={() => updateStudent(student.id, { status: student.status === 'active' ? 'inactive' : 'active' })}
+                        title="Toggle status"
+                      >
+                        <Badge variant={student.status === 'active' ? 'success' : 'danger'} size="sm">
+                          {student.status}
+                        </Badge>
+                      </button>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => openEdit(student)} aria-label="Edit student">
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => deleteStudent(student)} aria-label="Delete student">
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {!filtered.length && (
+            <div className="px-6 py-14 text-center">
+              <GraduationCap className="mx-auto h-10 w-10 text-slate-300" />
+              <p className="mt-3 font-medium text-slate-800">No matching students</p>
+              <p className="text-sm text-slate-500">Change the filters or add a new student.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Modal
+        open={formOpen}
+        onClose={() => setFormOpen(false)}
+        title={editingId ? 'Edit student' : 'Add student'}
+        description="Changes are saved in this browser for the portfolio demo."
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setFormOpen(false)}>Cancel</Button>
+            <Button type="submit" form="student-form">{editingId ? 'Save changes' : 'Add student'}</Button>
+          </div>
+        }
+      >
+        <form id="student-form" onSubmit={submit} className="grid gap-4 md:grid-cols-2">
+          <Input label="Full name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+          <Input label="Register number" value={form.regNo} onChange={(e) => setForm({ ...form, regNo: e.target.value })} required />
+          <Input label="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+          <Input label="Phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Department</label>
+            <select
+              value={form.department}
+              onChange={(e) => setForm({ ...form, department: e.target.value })}
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm"
+            >
+              {['AIML', 'CSE', 'Data Science', 'IT', 'ECE', 'Mechanical', 'Biotech'].map((item) => <option key={item}>{item}</option>)}
+            </select>
+          </div>
+          <Input label="Batch" value={form.batch} onChange={(e) => setForm({ ...form, batch: e.target.value })} />
+          <Input label="Semester" type="number" min={1} max={12} value={form.semester} onChange={(e) => setForm({ ...form, semester: Number(e.target.value) })} />
+          <Input label="CGPA" type="number" min={0} max={10} step="0.1" value={form.cgpa} onChange={(e) => setForm({ ...form, cgpa: Number(e.target.value) })} />
+          <Input label="Attendance %" type="number" min={0} max={100} value={form.attendance} onChange={(e) => setForm({ ...form, attendance: Number(e.target.value) })} />
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Status</label>
+            <select
+              value={form.status}
+              onChange={(e) => setForm({ ...form, status: e.target.value as 'active' | 'inactive' })}
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm"
+            >
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+        </form>
+      </Modal>
     </div>
   )
 }
