@@ -83,6 +83,7 @@ export default function StudentsPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<StudentForm>(emptyForm)
+  const canManage = user?.role === 'College Admin'
 
   const departments = ['All', ...Array.from(new Set(students.map((item) => item.department))).sort()]
 
@@ -121,6 +122,7 @@ export default function StudentsPage() {
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
+    if (!canManage) return
     const normalized: StudentForm = {
       ...form,
       name: form.name.trim(),
@@ -138,6 +140,7 @@ export default function StudentsPage() {
   }
 
   const deleteStudent = (student: StudentRecord) => {
+    if (!canManage) return
     if (window.confirm(`Remove ${student.name} (${student.regNo}) from the demo workspace?`)) {
       removeStudent(student.id)
     }
@@ -155,7 +158,9 @@ export default function StudentsPage() {
           <p className="text-sm font-medium text-primary-600">{user.collegeName}</p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">Student Records</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Persistent local demo data. Add, edit, filter and export without a paid database.
+            {canManage
+              ? 'Persistent student records with create, edit, status control and export.'
+              : 'Read-only student records for teaching and academic review.'}
           </p>
         </div>
         <div className="flex gap-2">
@@ -163,10 +168,12 @@ export default function StudentsPage() {
             <Download className="h-4 w-4" />
             Export CSV
           </Button>
-          <Button size="sm" className="gap-2" onClick={openCreate}>
-            <Plus className="h-4 w-4" />
-            Add Student
-          </Button>
+          {canManage && (
+            <Button size="sm" className="gap-2" onClick={openCreate}>
+              <Plus className="h-4 w-4" />
+              Add Student
+            </Button>
+          )}
         </div>
       </div>
 
@@ -271,24 +278,34 @@ export default function StudentsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-4">
-                      <button
-                        onClick={() => updateStudent(student.id, { status: student.status === 'active' ? 'inactive' : 'active' })}
-                        title="Toggle status"
-                      >
+                      {canManage ? (
+                        <button
+                          onClick={() => updateStudent(student.id, { status: student.status === 'active' ? 'inactive' : 'active' })}
+                          title="Toggle status"
+                        >
+                          <Badge variant={student.status === 'active' ? 'success' : 'danger'} size="sm">
+                            {student.status}
+                          </Badge>
+                        </button>
+                      ) : (
                         <Badge variant={student.status === 'active' ? 'success' : 'danger'} size="sm">
                           {student.status}
                         </Badge>
-                      </button>
+                      )}
                     </td>
                     <td className="px-4 py-4">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(student)} aria-label="Edit student">
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => deleteStudent(student)} aria-label="Delete student">
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </div>
+                      {canManage ? (
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => openEdit(student)} aria-label="Edit student">
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => deleteStudent(student)} aria-label="Delete student">
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="block text-right text-xs text-slate-400">View only</span>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -306,7 +323,7 @@ export default function StudentsPage() {
       </Card>
 
       <Modal
-        open={formOpen}
+        open={canManage && formOpen}
         onClose={() => setFormOpen(false)}
         title={editingId ? 'Edit student' : 'Add student'}
         description="Changes are saved in this browser for the portfolio demo."
