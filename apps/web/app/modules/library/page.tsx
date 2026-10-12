@@ -27,6 +27,7 @@ export default function LibraryPage() {
   const issueBook = useEduStore((state) => state.issueBook)
   const [search, setSearch] = useState('')
   const [open, setOpen] = useState(false)
+  const canManage = user?.role === 'College Admin' || user?.role === 'Faculty'
   const [form, setForm] = useState({
     title: '',
     author: '',
@@ -55,7 +56,7 @@ export default function LibraryPage() {
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
-    if (!form.title.trim() || !form.author.trim()) return
+    if (!canManage || !form.title.trim() || !form.author.trim()) return
     addBook({
       ...form,
       title: form.title.trim(),
@@ -91,11 +92,17 @@ export default function LibraryPage() {
         <div>
           <p className="text-sm font-medium text-primary-600">{user.collegeName}</p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">Library</h1>
-          <p className="mt-1 text-sm text-slate-500">Persistent catalog inventory with issue simulation and CSV export.</p>
+          <p className="mt-1 text-sm text-slate-500">
+            {canManage
+              ? 'Persistent catalog inventory with issue simulation and CSV export.'
+              : 'Browse the current library catalog and availability in read-only mode.'}
+          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={exportCsv} className="gap-2"><Download className="h-4 w-4" />Export</Button>
-          <Button size="sm" onClick={() => setOpen(true)} className="gap-2"><Plus className="h-4 w-4" />Add book</Button>
+          {canManage && (
+            <Button size="sm" onClick={() => setOpen(true)} className="gap-2"><Plus className="h-4 w-4" />Add book</Button>
+          )}
         </div>
       </div>
 
@@ -149,15 +156,21 @@ export default function LibraryPage() {
                     <span>{book.location}</span>
                     <span>ISBN {book.isbn}</span>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-4 w-full"
-                    disabled={book.available <= 0}
-                    onClick={() => issueBook(book.id)}
-                  >
-                    {book.available > 0 ? 'Issue one copy' : 'Out of stock'}
-                  </Button>
+                  {canManage ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-4 w-full"
+                      disabled={book.available <= 0}
+                      onClick={() => issueBook(book.id)}
+                    >
+                      {book.available > 0 ? 'Issue one copy' : 'Out of stock'}
+                    </Button>
+                  ) : (
+                    <div className="mt-4 rounded-lg bg-slate-50 px-3 py-2 text-center text-xs font-medium text-slate-500">
+                      {book.available > 0 ? 'Available in library' : 'Currently unavailable'}
+                    </div>
+                  )}
                 </div>
               )
             })}
@@ -166,7 +179,7 @@ export default function LibraryPage() {
       </Card>
 
       <Modal
-        open={open}
+        open={canManage && open}
         onClose={() => setOpen(false)}
         title="Add library book"
         description="Add a catalog item to the local workspace."
