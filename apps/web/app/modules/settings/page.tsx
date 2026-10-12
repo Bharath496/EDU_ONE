@@ -51,6 +51,7 @@ export default function SettingsPage() {
   const faculty = useEduStore((state) => state.faculty)
   const books = useEduStore((state) => state.books)
   const marks = useEduStore((state) => state.marks)
+  const assignmentSubmissions = useEduStore((state) => state.assignmentSubmissions)
 
   const [tab, setTab] = useState<'account' | 'notifications' | 'workspace'>('account')
   const [name, setName] = useState(user?.name ?? '')
@@ -104,6 +105,7 @@ export default function SettingsPage() {
       faculty,
       books,
       marks,
+      assignmentSubmissions,
     }
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
