@@ -56,7 +56,7 @@ export default function NoticesPage() {
     if (!form.title.trim() || !form.content.trim()) return
     publishNotice({
       ...form,
-      author: form.author || user.name,
+      author: form.author || user?.name || 'College Admin',
       title: form.title.trim(),
       content: form.content.trim(),
     })
