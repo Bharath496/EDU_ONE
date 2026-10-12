@@ -2,142 +2,65 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card'
+import { RefreshCcw, Save, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
-import { Badge } from '@/components/ui/Badge'
 import { useAuthStore } from '@/lib/auth-store'
-import { Settings, ChevronRight, Save, Globe, Shield, Bell, Database, Mail, Clock, Palette, Lock, RefreshCw, Server } from 'lucide-react'
+import { usePlatformStore } from '@/lib/platform-store'
 
 export default function AdminSettingsPage() {
-  const { user, isAuthenticated, isLoading } = useAuthStore()
+  const { user, isAuthenticated } = useAuthStore()
   const router = useRouter()
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
-
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-slate-50"><div className="w-8 h-8 rounded-xl bg-primary-600 animate-pulse" /></div>
+  const tenants = usePlatformStore((state)=>state.tenants)
+  const users = usePlatformStore((state)=>state.users)
+  const resetPlatformDemo = usePlatformStore((state)=>state.resetPlatformDemo)
+  const [platformName,setPlatformName]=useState('EDU_ONE Platform Demo')
+  const [supportEmail,setSupportEmail]=useState('support@eduone.demo')
+  const [saved,setSaved]=useState(false)
 
   if (!isAuthenticated || !user || user.role !== 'Super Admin') {
     router.push('/dashboard')
     return null
   }
 
-  const handleSave = () => {
-    setSaving(true)
-    setTimeout(() => {
-      setSaving(false)
-      setSaved(true)
-      setTimeout(() => setSaved(false), 3000)
-    }, 1000)
+  const save=()=>{
+    localStorage.setItem('eduone-platform-settings',JSON.stringify({platformName,supportEmail}))
+    setSaved(true)
+    window.setTimeout(()=>setSaved(false),2200)
+  }
+
+  const reset=()=>{
+    if(window.confirm('Reset fictional platform tenants and users to the default demo data?')) resetPlatformDemo()
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-slate-200">
-        <div className="flex h-16 items-center justify-between px-4 lg:px-6">
-          <div>
-            <div className="flex items-center gap-2 text-sm text-slate-500">
-              <Link href="/admin" className="hover:text-primary-600">Admin</Link>
-              <ChevronRight className="w-4 h-4" />
-              <span className="text-slate-900">Settings</span>
-            </div>
-            <h1 className="text-xl font-bold text-slate-900">System Settings</h1>
-          </div>
-          <Button variant="primary" size="sm" className="gap-2" onClick={handleSave} loading={saving}>
-            {saved ? <>Saved <RefreshCw className="w-4 h-4" /></> : <><Save className="w-4 h-4" /> Save Changes</>}
-          </Button>
-        </div>
-      </header>
+    <div className="mx-auto max-w-4xl space-y-6 p-4 lg:p-6">
+      <div><p className="text-sm font-medium text-primary-600">Platform Admin</p><h1 className="mt-1 text-2xl font-bold text-slate-950">Platform Settings</h1><p className="mt-1 text-sm text-slate-500">Safe local settings for the portfolio admin demo.</p></div>
 
-      <div className="p-4 lg:p-6 space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="space-y-1">
-            {[
-              { id: 'general', label: 'General', icon: Settings },
-              { id: 'branding', label: 'Branding', icon: Palette },
-              { id: 'email', label: 'Email', icon: Mail },
-              { id: 'security', label: 'Security', icon: Lock },
-              { id: 'notifications', label: 'Notifications', icon: Bell },
-              { id: 'database', label: 'Database', icon: Database },
-              { id: 'regions', label: 'Regions', icon: Globe },
-            ].map(item => (
-              <button key={item.id} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-white hover:text-slate-900 transition-colors text-left">
-                <item.icon className="w-5 h-5" />
-                <span>{item.label}</span>
-              </button>
-            ))}
-          </div>
+      {saved&&<div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">Platform demo settings saved locally.</div>}
 
-          <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">General Settings</CardTitle>
-                <CardDescription>Platform-wide configuration options</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input label="Platform Name" defaultValue="EduOne" placeholder="Enter platform name" />
-                  <Input label="Support Email" defaultValue="support@eduone.io" type="email" placeholder="support@eduone.io" />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input label="Default Language" defaultValue="English" placeholder="Default language" />
-                  <Input label="Timezone" defaultValue="Asia/Kolkata (UTC+5:30)" placeholder="Default timezone" />
-                </div>
-              </CardContent>
-            </Card>
+      <Card>
+        <CardHeader><CardTitle>General</CardTitle><CardDescription>These values stay in this browser and do not change any external service.</CardDescription></CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2">
+          <Input label="Platform name" value={platformName} onChange={(e)=>setPlatformName(e.target.value)}/>
+          <Input label="Support email" type="email" value={supportEmail} onChange={(e)=>setSupportEmail(e.target.value)}/>
+          <div className="md:col-span-2"><Button onClick={save} className="gap-2"><Save className="h-4 w-4"/>{saved?'Saved':'Save settings'}</Button></div>
+        </CardContent>
+      </Card>
 
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Security Settings</CardTitle>
-                <CardDescription>Authentication and access control</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0 space-y-4">
-                {[
-                  { label: 'Two-Factor Authentication', desc: 'Require 2FA for all admin accounts', enabled: true },
-                  { label: 'Session Timeout', desc: 'Automatically log out inactive users after 30 minutes', enabled: true },
-                  { label: 'Password Policy', desc: 'Minimum 8 characters, special chars required', enabled: true },
-                  { label: 'IP Whitelisting', desc: 'Restrict admin access to approved IP addresses', enabled: false },
-                  { label: 'Single Sign-On (SSO)', desc: 'Enable SAML/SSO for enterprise colleges', enabled: false },
-                ].map((setting, i) => (
-                  <div key={i} className="flex items-center justify-between py-3">
-                    <div>
-                      <p className="text-sm font-medium text-slate-900">{setting.label}</p>
-                      <p className="text-sm text-slate-500">{setting.desc}</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" defaultChecked={setting.enabled} className="sr-only peer" />
-                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600" />
-                    </label>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+      <Card>
+        <CardHeader><CardTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-emerald-600"/>Demo integrity</CardTitle><CardDescription>Current local platform state.</CardDescription></CardHeader>
+        <CardContent className="grid gap-3 sm:grid-cols-2">
+          <div className="rounded-xl bg-slate-50 p-4"><p className="text-xs text-slate-500">Institutions</p><p className="text-2xl font-bold text-slate-950">{tenants.length}</p></div>
+          <div className="rounded-xl bg-slate-50 p-4"><p className="text-xs text-slate-500">Platform users</p><p className="text-2xl font-bold text-slate-950">{users.length}</p></div>
+        </CardContent>
+      </Card>
 
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">System Information</CardTitle>
-                <CardDescription>Platform version and status</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0 space-y-3">
-                {[
-                  { label: 'Platform Version', value: 'v3.2.1' },
-                  { label: 'Last Deployed', value: '2 days ago' },
-                  { label: 'Node Version', value: '24.16.0' },
-                  { label: 'Database', value: 'PostgreSQL 16' },
-                  { label: 'Storage Used', value: '78% of 500GB' },
-                  { label: 'API Endpoint', value: 'https://api.eduone.io/v3' },
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center justify-between py-2">
-                    <span className="text-sm text-slate-600">{item.label}</span>
-                    <span className="text-sm font-medium text-slate-900">{item.value}</span>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
+      <Card className="border-red-200">
+        <CardHeader><CardTitle className="text-red-800">Reset platform demo</CardTitle><CardDescription>Restore the original fictional tenant and user records.</CardDescription></CardHeader>
+        <CardContent><Button variant="outline" className="gap-2 border-red-200 text-red-700 hover:bg-red-50" onClick={reset}><RefreshCcw className="h-4 w-4"/>Reset platform data</Button></CardContent>
+      </Card>
     </div>
   )
 }
