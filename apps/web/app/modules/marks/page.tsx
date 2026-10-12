@@ -35,9 +35,16 @@ export default function MarksPage() {
   const updateMark = useEduStore((state) => state.updateMark)
   const [search, setSearch] = useState('')
   const [course, setCourse] = useState('All')
+  const canManage = user?.role === 'College Admin' || user?.role === 'Faculty'
+  const matchedStudent =
+    students.find((student) => student.name.toLowerCase() === user?.name.toLowerCase()) ??
+    students[0]
+  const visibleMarks = canManage
+    ? marks
+    : marks.filter((mark) => mark.studentId === matchedStudent?.id)
 
-  const courses = ['All', ...Array.from(new Set(marks.map((item) => item.course))).sort()]
-  const enriched = marks
+  const courses = ['All', ...Array.from(new Set(visibleMarks.map((item) => item.course))).sort()]
+  const enriched = visibleMarks
     .map((mark) => {
       const student = students.find((item) => item.id === mark.studentId)
       const total = mark.internal + mark.external
@@ -97,7 +104,11 @@ export default function MarksPage() {
         <div>
           <p className="text-sm font-medium text-primary-600">{user.collegeName}</p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">Marks & Grades</h1>
-          <p className="mt-1 text-sm text-slate-500">Edit internal and external marks directly. Changes persist in the browser workspace.</p>
+          <p className="mt-1 text-sm text-slate-500">
+            {canManage
+              ? 'Edit internal and external marks directly. Changes persist in the browser workspace.'
+              : 'Read-only grades for the current student profile.'}
+          </p>
         </div>
         <Button variant="outline" size="sm" className="gap-2" onClick={exportCsv}><Download className="h-4 w-4" />Export CSV</Button>
       </div>
@@ -164,8 +175,9 @@ export default function MarksPage() {
                           min={0}
                           max={50}
                           value={row.internal}
-                          onChange={(event) => updateMark(row.id, Number(event.target.value), row.external)}
-                          className="h-9 w-20 rounded-lg border border-slate-200 px-2 text-center outline-none focus:border-primary-500"
+                          disabled={!canManage}
+                          onChange={(event) => canManage && updateMark(row.id, Number(event.target.value), row.external)}
+                          className="h-9 w-20 rounded-lg border border-slate-200 px-2 text-center outline-none focus:border-primary-500 disabled:bg-slate-50 disabled:text-slate-600"
                         />
                       </td>
                       <td className="px-4 py-4 text-center">
@@ -174,8 +186,9 @@ export default function MarksPage() {
                           min={0}
                           max={50}
                           value={row.external}
-                          onChange={(event) => updateMark(row.id, row.internal, Number(event.target.value))}
-                          className="h-9 w-20 rounded-lg border border-slate-200 px-2 text-center outline-none focus:border-primary-500"
+                          disabled={!canManage}
+                          onChange={(event) => canManage && updateMark(row.id, row.internal, Number(event.target.value))}
+                          className="h-9 w-20 rounded-lg border border-slate-200 px-2 text-center outline-none focus:border-primary-500 disabled:bg-slate-50 disabled:text-slate-600"
                         />
                       </td>
                       <td className="px-4 py-4 text-center font-bold text-slate-950">{row.total}/100</td>
