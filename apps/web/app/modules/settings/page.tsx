@@ -52,6 +52,9 @@ export default function SettingsPage() {
   const books = useEduStore((state) => state.books)
   const marks = useEduStore((state) => state.marks)
   const assignmentSubmissions = useEduStore((state) => state.assignmentSubmissions)
+  const courses = useEduStore((state) => state.courses)
+  const messages = useEduStore((state) => state.messages)
+  const supportTickets = useEduStore((state) => state.supportTickets)
 
   const [tab, setTab] = useState<'account' | 'notifications' | 'workspace'>('account')
   const [name, setName] = useState(user?.name ?? '')
@@ -108,6 +111,9 @@ export default function SettingsPage() {
       books,
       marks,
       assignmentSubmissions,
+      courses,
+      messages,
+      supportTickets,
     }
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
@@ -297,6 +303,9 @@ export default function SettingsPage() {
                   ['Exams', exams.length],
                   ['Faculty', faculty.length],
                   ['Books', books.length],
+                  ['Courses', courses.length],
+                  ['Messages', messages.length],
+                  ['Support', supportTickets.length],
                 ].map(([label, value]) => (
                   <div key={label} className="rounded-xl bg-slate-50 p-3 text-center">
                     <p className="text-xl font-bold text-slate-950">{value}</p>
