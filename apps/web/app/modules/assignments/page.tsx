@@ -38,11 +38,6 @@ export default function AssignmentsPage() {
     status: 'published' as 'draft' | 'published' | 'closed',
   })
 
-  if (!isAuthenticated || !user) {
-    router.push('/login')
-    return null
-  }
-
   const filtered = useMemo(() => {
     const needle = search.trim().toLowerCase()
     return assignments.filter((assignment) => {
@@ -67,6 +62,11 @@ export default function AssignmentsPage() {
     addAssignment({ ...form, title: form.title.trim() })
     setOpen(false)
     setForm({ ...form, title: '' })
+  }
+
+  if (!isAuthenticated || !user) {
+    router.push('/login')
+    return null
   }
 
   return (
