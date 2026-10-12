@@ -23,6 +23,14 @@ type ActivityEntry = {
   at: string
 }
 
+export type WorkspaceSnapshot = {
+  students: StudentRecord[]
+  attendanceSessions: AttendanceSession[]
+  assignments: AssignmentRecord[]
+  notices: NoticeRecord[]
+  fees: FeeRecord[]
+}
+
 type EduState = {
   students: StudentRecord[]
   attendanceSessions: AttendanceSession[]
@@ -38,6 +46,7 @@ type EduState = {
   publishNotice: (notice: Omit<NoticeRecord, 'id' | 'views' | 'publishedAt'>) => void
   toggleNoticePin: (id: string) => void
   markFeePaid: (id: string, method?: string) => void
+  restoreSnapshot: (snapshot: WorkspaceSnapshot) => void
   resetDemo: () => void
 }
 
@@ -189,6 +198,16 @@ export const useEduStore = create<EduState>()(
               : state.activity,
           }
         }),
+
+      restoreSnapshot: (snapshot) =>
+        set((state) => ({
+          students: clone(snapshot.students),
+          attendanceSessions: clone(snapshot.attendanceSessions),
+          assignments: clone(snapshot.assignments),
+          notices: clone(snapshot.notices),
+          fees: clone(snapshot.fees),
+          activity: [activity('Workspace restored', 'Imported an EDU_ONE JSON snapshot'), ...state.activity].slice(0, 50),
+        })),
 
       resetDemo: () =>
         set({
