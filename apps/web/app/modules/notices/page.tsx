@@ -1,106 +1,238 @@
 'use client'
 
-import { useState } from 'react'
+import { FormEvent, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card'
+import {
+  Bell,
+  Calendar,
+  Eye,
+  Megaphone,
+  Pin,
+  Plus,
+  Search,
+} from 'lucide-react'
+import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
-import { Badge, StatusBadge } from '@/components/ui/Badge'
-import { Avatar } from '@/components/ui/Avatar'
+import { Card, CardContent } from '@/components/ui/Card'
+import { Input } from '@/components/ui/Input'
+import { Modal } from '@/components/ui/Modal'
 import { useAuthStore } from '@/lib/auth-store'
-import { Megaphone, Plus, Search, ChevronRight, Calendar, Clock, Pin, Bell, MessageSquare, AlertCircle, Paperclip, Download, Eye } from 'lucide-react'
-
-const NOTICES = [
-  { id: '1', title: 'Semester Exam Schedule Released', content: 'The schedule for the semester exams has been published. Please check the academic portal for details.', author: 'Dean Academics', authorRole: 'College Admin', target: 'All Students, Faculty', priority: 'high', date: 'Jul 15, 2024', views: 1240, pinned: true },
-  { id: '2', title: 'Cultural Fest Registrations Open', content: 'Annual cultural fest registrations are now open. Last date for registration is July 30th.', author: 'Cultural Committee', authorRole: 'Faculty', target: 'All Students', priority: 'medium', date: 'Jul 14, 2024', views: 890, pinned: false },
-  { id: '3', title: 'Holiday Notice - Independence Day', content: 'The college will remain closed on August 15th on account of Independence Day.', author: 'Administration', authorRole: 'College Admin', target: 'Everyone', priority: 'low', date: 'Jul 12, 2024', views: 2100, pinned: true },
-  { id: '4', title: 'Library Timings Extended', content: 'The library will remain open till 10 PM during exam season starting from next week.', author: 'Librarian', authorRole: 'Staff', target: 'All Students', priority: 'medium', date: 'Jul 10, 2024', views: 567, pinned: false },
-  { id: '5', title: 'Urgent: Faculty Meeting Tomorrow', content: 'All faculty members are requested to attend an urgent meeting tomorrow at 3 PM in the conference hall.', author: 'Principal', authorRole: 'College Admin', target: 'Faculty', priority: 'urgent', date: 'Jul 09, 2024', views: 345, pinned: false },
-]
+import { useEduStore } from '@/lib/edu-store'
 
 export default function NoticesPage() {
   const { user, isAuthenticated } = useAuthStore()
   const router = useRouter()
+  const notices = useEduStore((state) => state.notices)
+  const publishNotice = useEduStore((state) => state.publishNotice)
+  const toggleNoticePin = useEduStore((state) => state.toggleNoticePin)
+
   const [search, setSearch] = useState('')
+  const [priority, setPriority] = useState('All')
+  const [open, setOpen] = useState(false)
+  const [form, setForm] = useState({
+    title: '',
+    content: '',
+    author: user?.name ?? 'College Admin',
+    target: 'Everyone',
+    priority: 'medium' as 'low' | 'medium' | 'high' | 'urgent',
+    pinned: false,
+  })
 
-  if (!isAuthenticated || !user) { router.push('/login'); return null }
+  if (!isAuthenticated || !user) {
+    router.push('/login')
+    return null
+  }
 
-  const filtered = NOTICES.filter(n =>
-    n.title.toLowerCase().includes(search.toLowerCase()) ||
-    n.author.toLowerCase().includes(search.toLowerCase()) ||
-    n.target.toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = useMemo(() => {
+    const needle = search.trim().toLowerCase()
+    return notices.filter((notice) => {
+      const matchesSearch =
+        !needle ||
+        notice.title.toLowerCase().includes(needle) ||
+        notice.content.toLowerCase().includes(needle) ||
+        notice.author.toLowerCase().includes(needle)
+      const matchesPriority = priority === 'All' || notice.priority === priority.toLowerCase()
+      return matchesSearch && matchesPriority
+    })
+  }, [notices, priority, search])
 
-  const pinnedNotices = filtered.filter(n => n.pinned)
-  const regularNotices = filtered.filter(n => !n.pinned)
+  const submit = (event: FormEvent) => {
+    event.preventDefault()
+    if (!form.title.trim() || !form.content.trim()) return
+    publishNotice({
+      ...form,
+      author: form.author || user.name,
+      title: form.title.trim(),
+      content: form.content.trim(),
+    })
+    setOpen(false)
+    setForm({ ...form, title: '', content: '', pinned: false })
+  }
+
+  const pinned = filtered.filter((item) => item.pinned)
+  const regular = filtered.filter((item) => !item.pinned)
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-slate-200">
-        <div className="flex h-16 items-center justify-between px-4 lg:px-6">
-          <div>
-            <p className="text-sm text-slate-500">{user.collegeName}</p>
-            <h1 className="text-xl font-bold text-slate-900">Notices & Announcements</h1>
-          </div>
-          <Link href="/modules/notices/new">
-            <Button variant="primary" size="sm" className="gap-2"><Plus className="w-4 h-4" /> Create Notice</Button>
-          </Link>
-        </div>
-      </header>
-
-      <div className="p-4 lg:p-6 space-y-6">
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-          <input type="text" placeholder="Search notices..." value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
-        </div>
-
-        {pinnedNotices.length > 0 && (
-          <div>
-            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <Pin className="w-4 h-4" /> Pinned
-            </h2>
-            <div className="space-y-3">
-              {pinnedNotices.map(notice => (
-                <NoticeCard key={notice.id} notice={notice} />
-              ))}
-            </div>
-          </div>
-        )}
-
+    <div className="space-y-6 p-4 lg:p-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Recent Notices</h2>
-          <div className="space-y-3">
-            {regularNotices.map(notice => (
-              <NoticeCard key={notice.id} notice={notice} />
+          <p className="text-sm font-medium text-primary-600">{user.collegeName}</p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">Notices & Announcements</h1>
+          <p className="mt-1 text-sm text-slate-500">Publish, pin and filter institution updates with persistent local demo data.</p>
+        </div>
+        <Button size="sm" className="gap-2" onClick={() => setOpen(true)}>
+          <Plus className="h-4 w-4" />
+          Publish notice
+        </Button>
+      </div>
+
+      <Card>
+        <CardContent className="grid gap-3 p-4 md:grid-cols-[1fr_180px]">
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search notices"
+            leftIcon={<Search className="h-4 w-4 text-slate-400" />}
+          />
+          <select value={priority} onChange={(event) => setPriority(event.target.value)} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm">
+            <option>All</option>
+            <option>Urgent</option>
+            <option>High</option>
+            <option>Medium</option>
+            <option>Low</option>
+          </select>
+        </CardContent>
+      </Card>
+
+      {pinned.length > 0 && (
+        <section>
+          <h2 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.15em] text-slate-500">
+            <Pin className="h-4 w-4" />
+            Pinned
+          </h2>
+          <div className="grid gap-4 xl:grid-cols-2">
+            {pinned.map((notice) => (
+              <NoticeCard key={notice.id} notice={notice} onPin={() => toggleNoticePin(notice.id)} />
             ))}
           </div>
+        </section>
+      )}
+
+      <section>
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.15em] text-slate-500">Recent notices</h2>
+        <div className="grid gap-4 xl:grid-cols-2">
+          {regular.map((notice) => (
+            <NoticeCard key={notice.id} notice={notice} onPin={() => toggleNoticePin(notice.id)} />
+          ))}
         </div>
-      </div>
+      </section>
+
+      {!filtered.length && (
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center">
+          <Megaphone className="mx-auto h-10 w-10 text-slate-300" />
+          <p className="mt-3 font-medium text-slate-800">No matching notices</p>
+        </div>
+      )}
+
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Publish notice"
+        description="Create a realistic demo announcement. No server or paid messaging provider is required."
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button type="submit" form="notice-form">Publish</Button>
+          </div>
+        }
+      >
+        <form id="notice-form" onSubmit={submit} className="space-y-4">
+          <Input label="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Message</label>
+            <textarea
+              value={form.content}
+              onChange={(e) => setForm({ ...form, content: e.target.value })}
+              rows={5}
+              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
+              required
+            />
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            <Input label="Author" value={form.author} onChange={(e) => setForm({ ...form, author: e.target.value })} />
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">Audience</label>
+              <select value={form.target} onChange={(e) => setForm({ ...form, target: e.target.value })} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm">
+                <option>Everyone</option>
+                <option>All Students</option>
+                <option>Students & Faculty</option>
+                <option>Faculty</option>
+                <option>Parents</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">Priority</label>
+              <select
+                value={form.priority}
+                onChange={(e) => setForm({ ...form, priority: e.target.value as 'low' | 'medium' | 'high' | 'urgent' })}
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm"
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+              </select>
+            </div>
+          </div>
+          <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+            <input type="checkbox" checked={form.pinned} onChange={(e) => setForm({ ...form, pinned: e.target.checked })} className="h-4 w-4 rounded border-slate-300" />
+            Pin this notice
+          </label>
+        </form>
+      </Modal>
     </div>
   )
 }
 
-function NoticeCard({ notice }: { notice: typeof NOTICES[0] }) {
+function NoticeCard({
+  notice,
+  onPin,
+}: {
+  notice: ReturnType<typeof useEduStore.getState>['notices'][number]
+  onPin: () => void
+}) {
+  const priorityVariant = notice.priority === 'urgent'
+    ? 'danger'
+    : notice.priority === 'high'
+      ? 'warning'
+      : notice.priority === 'medium'
+        ? 'primary'
+        : 'secondary'
+
   return (
-    <Card className={`hover:shadow-soft transition-shadow ${notice.pinned ? 'border-primary-200 bg-primary-50/30' : ''}`}>
+    <Card className={notice.pinned ? 'border-primary-200 bg-primary-50/30' : ''}>
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 mb-2">
-              <h3 className="font-semibold text-slate-900">{notice.title}</h3>
-              {notice.priority === 'urgent' && <Badge variant="danger" size="sm" dot>Urgent</Badge>}
-              {notice.priority === 'high' && <Badge variant="warning" size="sm">High</Badge>}
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="font-semibold text-slate-950">{notice.title}</h3>
+              <Badge variant={priorityVariant} size="sm">{notice.priority}</Badge>
             </div>
-            <p className="text-sm text-slate-600 line-clamp-2">{notice.content}</p>
-            <div className="flex items-center gap-4 mt-3 text-xs text-slate-500">
-              <div className="flex items-center gap-1"><Bell className="w-3 h-3" /> {notice.author} ({notice.authorRole})</div>
-              <div className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {notice.date}</div>
-              <div className="flex items-center gap-1"><Eye className="w-3 h-3" /> {notice.views}</div>
+            <p className="mt-2 text-sm leading-6 text-slate-600">{notice.content}</p>
+            <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-slate-500">
+              <span className="flex items-center gap-1"><Bell className="h-3.5 w-3.5" />{notice.author}</span>
+              <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />{new Date(notice.publishedAt).toLocaleDateString('en-IN')}</span>
+              <span className="flex items-center gap-1"><Eye className="h-3.5 w-3.5" />{notice.views}</span>
+              <Badge variant="outline" size="sm">{notice.target}</Badge>
             </div>
           </div>
-          <div className="flex-shrink-0">
-            <Badge variant="secondary" size="sm">{notice.target}</Badge>
-          </div>
+          <button
+            onClick={onPin}
+            className={`rounded-xl p-2 transition-colors ${notice.pinned ? 'bg-primary-100 text-primary-700' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700'}`}
+            aria-label={notice.pinned ? 'Unpin notice' : 'Pin notice'}
+          >
+            <Pin className="h-4 w-4" />
+          </button>
         </div>
       </CardContent>
     </Card>
