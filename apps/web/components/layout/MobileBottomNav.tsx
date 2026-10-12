@@ -5,15 +5,21 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { getMobileNavigation } from '@/lib/navigation'
 import { useAuthStore } from '@/lib/auth-store'
+import { usePlatformStore } from '@/lib/platform-store'
 import { LayoutDashboard } from 'lucide-react'
 
 export function MobileBottomNav() {
   const pathname = usePathname()
   const { isAuthenticated, user } = useAuthStore()
+  const rolePermissions = usePlatformStore((state) => state.rolePermissions)
 
   if (!isAuthenticated || !user) return null
 
-  const navItems = getMobileNavigation(user.role).slice(0, 5)
+  const allowedHrefs =
+    user.role === 'Super Admin'
+      ? undefined
+      : rolePermissions[user.role as keyof typeof rolePermissions]
+  const navItems = getMobileNavigation(user.role, allowedHrefs).slice(0, 5)
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 bg-white lg:hidden">
