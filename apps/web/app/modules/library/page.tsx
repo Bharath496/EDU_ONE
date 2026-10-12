@@ -27,7 +27,7 @@ export default function LibraryPage() {
   const issueBook = useEduStore((state) => state.issueBook)
   const [search, setSearch] = useState('')
   const [open, setOpen] = useState(false)
-  const canManage = user?.role === 'College Admin' || user?.role === 'Faculty'
+  const canManage = user?.role === 'College Admin' || user?.role === 'Faculty' || user?.role === 'Staff'
   const [form, setForm] = useState({
     title: '',
     author: '',
