@@ -6,12 +6,18 @@ import { Sidebar } from '@/components/layout/Sidebar'
 import { TopBar } from '@/components/layout/TopBar'
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav'
 import { useAuthStore } from '@/lib/auth-store'
+import { usePlatformStore } from '@/lib/platform-store'
 import { getWorkspaceNavigation } from '@/lib/navigation'
 
 export function WorkspaceShell({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const { user, isAuthenticated, isLoading } = useAuthStore()
+  const rolePermissions = usePlatformStore((state) => state.rolePermissions)
+  const allowedHrefs =
+    user && user.role !== 'Super Admin'
+      ? rolePermissions[user.role as keyof typeof rolePermissions]
+      : undefined
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
@@ -28,7 +34,7 @@ export function WorkspaceShell({ children }: { children: ReactNode }) {
     user &&
       (
         pathname === '/dashboard' ||
-        getWorkspaceNavigation(user.role).some(
+        getWorkspaceNavigation(user.role, allowedHrefs).some(
           (item) => pathname === item.href || pathname.startsWith(item.href + '/')
         )
       )
