@@ -156,12 +156,12 @@ class ApiClient {
   }
 
   async markAttendance(data: { studentId: string; courseId: string; date: string; status: string }) {
-    const response = await this.client.post('/attendance', data)
+    const response = await this.client.post('/attendance', { student_id: data.studentId, course_id: data.courseId, date: data.date, status: data.status })
     return response.data
   }
 
   async bulkMarkAttendance(data: { courseId: string; date: string; records: Array<{ studentId: string; status: string }> }) {
-    const response = await this.client.post('/attendance/bulk', data)
+    const response = await this.client.post('/attendance/bulk', { course_id: data.courseId, date: data.date, records: data.records.map((item) => ({ student_id: item.studentId, status: item.status })) })
     return response.data
   }
 
@@ -186,7 +186,7 @@ class ApiClient {
   }
 
   async makePayment(data: { feeId: string; amount: number; method: string; transactionId?: string }) {
-    const response = await this.client.post('/fees/pay', data)
+    const response = await this.client.post('/fees/pay', { fee_id: data.feeId, amount: data.amount, method: data.method, transaction_id: data.transactionId })
     return response.data
   }
 
