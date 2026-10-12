@@ -7,6 +7,7 @@ import { Avatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/lib/auth-store'
+import { usePlatformStore } from '@/lib/platform-store'
 import { getQuickActions, getWorkspaceNavigation } from '@/lib/navigation'
 
 interface SidebarProps {
@@ -20,11 +21,18 @@ export function Sidebar({ isOpen, onClose, onToggleCollapse, collapsed }: Sideba
   const pathname = usePathname()
   const router = useRouter()
   const { user, clearAuth } = useAuthStore()
+  const rolePermissions = usePlatformStore((state) => state.rolePermissions)
 
   if (!user) return null
 
-  const navigation = getWorkspaceNavigation(user.role)
-  const quickActions = getQuickActions(user.role)
+  const allowedHrefs =
+    user.role === 'Super Admin'
+      ? undefined
+      : rolePermissions[user.role as keyof typeof rolePermissions]
+  const navigation = getWorkspaceNavigation(user.role, allowedHrefs)
+  const quickActions = getQuickActions(user.role).filter(
+    (action) => user.role === 'Super Admin' || !allowedHrefs || allowedHrefs.includes(action.href)
+  )
 
   const signOut = () => {
     clearAuth()
