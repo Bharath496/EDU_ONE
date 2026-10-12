@@ -56,6 +56,13 @@ const DEMO_ROLES = [
     icon: Users,
     description: 'Student progress, attendance, fees and alerts',
   },
+  {
+    role: 'Staff',
+    name: 'Divya N',
+    email: 'staff@eduone.demo',
+    icon: Users,
+    description: 'Operations, library, fee desk and student support',
+  },
 ]
 
 const FEATURES = [
@@ -160,7 +167,7 @@ export default function HomePage() {
           </p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
           {DEMO_ROLES.map((account) => (
             <Card key={account.role} className="border-slate-800 bg-slate-900/80 text-white">
               <CardContent className="flex h-full flex-col p-5">
