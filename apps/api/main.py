@@ -23,7 +23,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
-        "https://edu-one-eta.vercel.app",
+        "https://bharath496.github.io",
     ],
     allow_credentials=True,
     allow_methods=["*"],
