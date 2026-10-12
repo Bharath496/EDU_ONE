@@ -58,6 +58,15 @@ export default function AttendancePage() {
   const [search, setSearch] = useState('')
   const [records, setRecords] = useState<Record<string, AttendanceStatus>>({})
   const [saved, setSaved] = useState(false)
+  const canManage = user?.role === 'College Admin' || user?.role === 'Faculty'
+
+  const scopedStudents = useMemo(() => {
+    if (canManage) return students
+    const matched =
+      students.find((student) => student.name.toLowerCase() === user?.name.toLowerCase()) ??
+      students[0]
+    return matched ? [matched] : []
+  }, [canManage, students, user?.name])
 
   const selectedSession = useMemo(
     () => sessions.find((item) => item.course === course && item.date === date),
@@ -66,36 +75,37 @@ export default function AttendancePage() {
 
   useEffect(() => {
     const next: Record<string, AttendanceStatus> = {}
-    students.forEach((student) => {
+    scopedStudents.forEach((student) => {
       next[student.id] = selectedSession?.records[student.id] ?? 'present'
     })
     setRecords(next)
     setSaved(false)
-  }, [selectedSession, students])
+  }, [scopedStudents, selectedSession])
 
   const filteredStudents = useMemo(() => {
     const needle = search.trim().toLowerCase()
-    if (!needle) return students
-    return students.filter(
+    if (!needle) return scopedStudents
+    return scopedStudents.filter(
       (student) =>
         student.name.toLowerCase().includes(needle) ||
         student.regNo.toLowerCase().includes(needle)
     )
-  }, [search, students])
+  }, [scopedStudents, search])
 
   const counts = STATUS_OPTIONS.reduce<Record<AttendanceStatus, number>>(
     (acc, option) => {
-      acc[option.value] = Object.values(records).filter((value) => value === option.value).length
+      acc[option.value] = scopedStudents.filter((student) => records[student.id] === option.value).length
       return acc
     },
     { present: 0, absent: 0, late: 0, excused: 0 }
   )
 
-  const attendancePercent = students.length
-    ? Math.round(((counts.present + counts.excused + counts.late * 0.8) / students.length) * 100)
+  const attendancePercent = scopedStudents.length
+    ? Math.round(((counts.present + counts.excused + counts.late * 0.8) / scopedStudents.length) * 100)
     : 0
 
   const setAll = (status: AttendanceStatus) => {
+    if (!canManage) return
     const next = { ...records }
     filteredStudents.forEach((student) => {
       next[student.id] = status
@@ -105,11 +115,12 @@ export default function AttendancePage() {
   }
 
   const persist = () => {
+    if (!canManage) return
     saveAttendance(course, date, records)
     setSaved(true)
   }
 
-  const exportRows = students.map((student) => ({
+  const exportRows = scopedStudents.map((student) => ({
     regNo: student.regNo,
     name: student.name,
     status: records[student.id] ?? 'present',
@@ -127,7 +138,9 @@ export default function AttendancePage() {
           <p className="text-sm font-medium text-primary-600">{user.collegeName}</p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">Attendance Workspace</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Mark a session, save it locally, and student attendance percentages update automatically.
+            {canManage
+              ? 'Mark a session, save it locally, and student attendance percentages update automatically.'
+              : 'Read-only attendance history for the current student profile.'}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -135,10 +148,12 @@ export default function AttendancePage() {
             <Download className="h-4 w-4" />
             Export
           </Button>
-          <Button size="sm" onClick={persist} className="gap-2">
-            <Save className="h-4 w-4" />
-            Save attendance
-          </Button>
+          {canManage && (
+            <Button size="sm" onClick={persist} className="gap-2">
+              <Save className="h-4 w-4" />
+              Save attendance
+            </Button>
+          )}
         </div>
       </div>
 
@@ -193,13 +208,15 @@ export default function AttendancePage() {
               <CardTitle>Mark session</CardTitle>
               <CardDescription>{course} • {date}</CardDescription>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {STATUS_OPTIONS.map((option) => (
-                <Button key={option.value} variant="outline" size="sm" onClick={() => setAll(option.value)}>
-                  Set all {option.label.toLowerCase()}
-                </Button>
-              ))}
-            </div>
+            {canManage && (
+              <div className="flex flex-wrap gap-2">
+                {STATUS_OPTIONS.map((option) => (
+                  <Button key={option.value} variant="outline" size="sm" onClick={() => setAll(option.value)}>
+                    Set all {option.label.toLowerCase()}
+                  </Button>
+                ))}
+              </div>
+            )}
           </div>
           <div className="max-w-md">
             <Input
@@ -252,7 +269,8 @@ export default function AttendancePage() {
                               setRecords({ ...records, [student.id]: event.target.value as AttendanceStatus })
                               setSaved(false)
                             }}
-                            className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500"
+                            disabled={!canManage}
+                            className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500"
                           >
                             {STATUS_OPTIONS.map((option) => (
                               <option key={option.value} value={option.value}>{option.label}</option>
@@ -287,7 +305,22 @@ export default function AttendancePage() {
                       <Calendar className="h-3.5 w-3.5" /> {session.date}
                     </p>
                   </div>
-                  <Badge variant="secondary" size="sm">{present}/{Object.keys(session.records).length}</Badge>
+                  {canManage ? (
+                    <Badge variant="secondary" size="sm">{present}/{Object.keys(session.records).length}</Badge>
+                  ) : (
+                    <Badge
+                      variant={
+                        session.records[scopedStudents[0]?.id] === 'present' || session.records[scopedStudents[0]?.id] === 'excused'
+                          ? 'success'
+                          : session.records[scopedStudents[0]?.id] === 'late'
+                            ? 'warning'
+                            : 'danger'
+                      }
+                      size="sm"
+                    >
+                      {session.records[scopedStudents[0]?.id] ?? 'not marked'}
+                    </Badge>
+                  )}
                 </div>
               </div>
             )
