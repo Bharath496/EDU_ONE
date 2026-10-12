@@ -1,126 +1,209 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
-import { Badge } from '@/components/ui/Badge'
+import {
+  CheckCircle2,
+  Clock3,
+  Download,
+  IndianRupee,
+  ReceiptText,
+  Search,
+  TriangleAlert,
+} from 'lucide-react'
 import { Avatar } from '@/components/ui/Avatar'
+import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { Card, CardContent } from '@/components/ui/Card'
+import { Input } from '@/components/ui/Input'
 import { useAuthStore } from '@/lib/auth-store'
-import { IndianRupee, Search, Download, ChevronRight, Calendar, Clock, CheckCircle, AlertCircle, FileText, Banknote, Receipt } from 'lucide-react'
+import { useEduStore } from '@/lib/edu-store'
 
-const FEE_RECORDS = [
-  { id: '1', name: 'Arjun Kumar', regNo: '23CS001', feeType: 'Tuition Fee', amount: '₹45,000', dueDate: 'Jul 15, 2024', paidDate: 'Jul 12, 2024', status: 'paid', method: 'Online' },
-  { id: '2', name: 'Priya Sharma', regNo: '23CS002', feeType: 'Hostel Fee', amount: '₹12,000', dueDate: 'Jul 20, 2024', paidDate: 'Jul 14, 2024', status: 'paid', method: 'UPI' },
-  { id: '3', name: 'Rahul Verma', regNo: '23EC003', feeType: 'Tuition Fee', amount: '₹45,000', dueDate: 'Jul 15, 2024', paidDate: '-', status: 'pending', method: '-' },
-  { id: '4', name: 'Sneha Patel', regNo: '23ME004', feeType: 'Library Fee', amount: '₹3,500', dueDate: 'Aug 15, 2024', paidDate: '-', status: 'upcoming', method: '-' },
-  { id: '5', name: 'Vikram Singh', regNo: '23CS005', feeType: 'Tuition Fee', amount: '₹45,000', dueDate: 'Jul 15, 2024', paidDate: '-', status: 'overdue', method: '-' },
-  { id: '6', name: 'Ananya Gupta', regNo: '23BT006', feeType: 'Exam Fee', amount: '₹5,000', dueDate: 'Sep 01, 2024', paidDate: '-', status: 'upcoming', method: '-' },
-  { id: '7', name: 'Rohit Joshi', regNo: '23CS007', feeType: 'Tuition Fee', amount: '₹45,000', dueDate: 'Jul 15, 2024', paidDate: 'Jul 10, 2024', status: 'paid', method: 'DD' },
-  { id: '8', name: 'Neha Kapoor', regNo: '23EC008', feeType: 'Transport Fee', amount: '₹6,000', dueDate: 'Aug 01, 2024', paidDate: '-', status: 'upcoming', method: '-' },
-]
+function downloadFees(rows: Array<{
+  name: string
+  regNo: string
+  feeType: string
+  amount: number
+  dueDate: string
+  paidDate?: string
+  status: string
+  method?: string
+}>) {
+  const csv = [
+    ['Student', 'Register No', 'Fee Type', 'Amount', 'Due Date', 'Paid Date', 'Status', 'Method'],
+    ...rows.map((row) => [
+      row.name,
+      row.regNo,
+      row.feeType,
+      row.amount,
+      row.dueDate,
+      row.paidDate ?? '',
+      row.status,
+      row.method ?? '',
+    ]),
+  ]
+    .map((row) => row.map((value) => `"${String(value).replaceAll('"', '""')}"`).join(','))
+    .join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = 'eduone-fees.csv'
+  anchor.click()
+  URL.revokeObjectURL(url)
+}
 
 export default function FeesPage() {
   const { user, isAuthenticated } = useAuthStore()
   const router = useRouter()
+  const students = useEduStore((state) => state.students)
+  const fees = useEduStore((state) => state.fees)
+  const markFeePaid = useEduStore((state) => state.markFeePaid)
+
   const [search, setSearch] = useState('')
+  const [status, setStatus] = useState('All')
 
-  if (!isAuthenticated || !user) { router.push('/login'); return null }
+  if (!isAuthenticated || !user) {
+    router.push('/login')
+    return null
+  }
 
-  const filtered = FEE_RECORDS.filter(r =>
-    r.name.toLowerCase().includes(search.toLowerCase()) ||
-    r.regNo.toLowerCase().includes(search.toLowerCase()) ||
-    r.feeType.toLowerCase().includes(search.toLowerCase())
-  )
+  const enriched = fees.map((fee) => {
+    const student = students.find((item) => item.id === fee.studentId)
+    return {
+      ...fee,
+      name: student?.name ?? 'Unknown student',
+      regNo: student?.regNo ?? '-',
+    }
+  })
 
-  const collected = FEE_RECORDS.filter(r => r.status === 'paid').reduce((sum, r) => sum + parseInt(r.amount.replace(/[₹,]/g, '')), 0)
-  const pending = FEE_RECORDS.filter(r => r.status === 'pending' || r.status === 'overdue').reduce((sum, r) => sum + parseInt(r.amount.replace(/[₹,]/g, '')), 0)
+  const filtered = useMemo(() => {
+    const needle = search.trim().toLowerCase()
+    return enriched.filter((row) => {
+      const matchesSearch =
+        !needle ||
+        row.name.toLowerCase().includes(needle) ||
+        row.regNo.toLowerCase().includes(needle) ||
+        row.feeType.toLowerCase().includes(needle)
+      const matchesStatus = status === 'All' || row.status === status.toLowerCase()
+      return matchesSearch && matchesStatus
+    })
+  }, [enriched, search, status])
+
+  const collected = fees.filter((item) => item.status === 'paid').reduce((sum, item) => sum + item.amount, 0)
+  const pending = fees.filter((item) => item.status === 'pending' || item.status === 'overdue').reduce((sum, item) => sum + item.amount, 0)
+  const overdue = fees.filter((item) => item.status === 'overdue').length
+  const collectionRate = fees.length ? Math.round((fees.filter((item) => item.status === 'paid').length / fees.length) * 100) : 0
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-slate-200">
-        <div className="flex h-16 items-center justify-between px-4 lg:px-6">
-          <div>
-            <p className="text-sm text-slate-500">{user.collegeName}</p>
-            <h1 className="text-xl font-bold text-slate-900">Fee Payments</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" className="gap-2"><Download className="w-4 h-4" /> Export</Button>
-            <Button variant="primary" size="sm" className="gap-2"><Receipt className="w-4 h-4" /> Pay Now</Button>
-          </div>
+    <div className="space-y-6 p-4 lg:p-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-sm font-medium text-primary-600">{user.collegeName}</p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">Fee Management</h1>
+          <p className="mt-1 text-sm text-slate-500">Track dues, simulate payment completion, and export the current ledger.</p>
         </div>
-      </header>
-
-      <div className="p-4 lg:p-6 space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-          {[
-            { label: 'Total Collected', value: `₹${collected.toLocaleString()}`, sub: 'This semester', icon: IndianRupee },
-            { label: 'Pending Dues', value: `₹${pending.toLocaleString()}`, sub: 'Overdue & pending', icon: Clock },
-            { label: 'Paid', value: FEE_RECORDS.filter(r => r.status === 'paid').length, sub: 'Students', icon: CheckCircle },
-            { label: 'Overdue', value: FEE_RECORDS.filter(r => r.status === 'overdue').length, sub: 'Requires attention', icon: AlertCircle },
-          ].map((stat, i) => (
-            <Card key={i}>
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="p-3 rounded-2xl bg-slate-100 text-slate-700"><stat.icon className="w-6 h-6" /></div>
-                <div>
-                  <p className="text-sm text-slate-500">{stat.label}</p>
-                  <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
-                  <p className="text-xs text-slate-400">{stat.sub}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-          <input type="text" placeholder="Search by name, reg no, or fee type..." value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
-        </div>
-
-        <Card>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-100">
-                    <th className="text-left py-3 px-4 font-medium text-slate-500">Student</th>
-                    <th className="text-left py-3 px-4 font-medium text-slate-500">Fee Type</th>
-                    <th className="text-right py-3 px-4 font-medium text-slate-500">Amount</th>
-                    <th className="text-left py-3 px-4 font-medium text-slate-500">Due Date</th>
-                    <th className="text-left py-3 px-4 font-medium text-slate-500">Paid On</th>
-                    <th className="text-left py-3 px-4 font-medium text-slate-500">Status</th>
-                    <th className="text-left py-3 px-4 font-medium text-slate-500">Method</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map(r => (
-                    <tr key={r.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-3">
-                          <Avatar name={r.name} size="sm" />
-                          <div>
-                            <p className="font-medium text-slate-900">{r.name}</p>
-                            <p className="text-xs text-slate-500">{r.regNo}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 text-slate-600">{r.feeType}</td>
-                      <td className="py-3 px-4 text-right font-medium text-slate-900">{r.amount}</td>
-                      <td className="py-3 px-4 text-slate-600">{r.dueDate}</td>
-                      <td className="py-3 px-4 text-slate-600">{r.paidDate}</td>
-                      <td className="py-3 px-4">
-                        <Badge variant={r.status === 'paid' ? 'success' : r.status === 'overdue' ? 'danger' : r.status === 'pending' ? 'warning' : 'secondary'} size="sm">{r.status}</Badge>
-                      </td>
-                      <td className="py-3 px-4 text-slate-600">{r.method}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+        <Button variant="outline" size="sm" className="gap-2" onClick={() => downloadFees(filtered)}>
+          <Download className="h-4 w-4" />
+          Export CSV
+        </Button>
       </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {[
+          { label: 'Collected', value: `₹${collected.toLocaleString('en-IN')}`, icon: IndianRupee, cls: 'bg-emerald-50 text-emerald-700' },
+          { label: 'Pending dues', value: `₹${pending.toLocaleString('en-IN')}`, icon: Clock3, cls: 'bg-amber-50 text-amber-700' },
+          { label: 'Collection rate', value: `${collectionRate}%`, icon: CheckCircle2, cls: 'bg-blue-50 text-blue-700' },
+          { label: 'Overdue records', value: overdue, icon: TriangleAlert, cls: 'bg-red-50 text-red-700' },
+        ].map((item) => (
+          <Card key={item.label}>
+            <CardContent className="flex items-center gap-4 p-5">
+              <div className={`rounded-2xl p-3 ${item.cls}`}><item.icon className="h-6 w-6" /></div>
+              <div>
+                <p className="text-sm text-slate-500">{item.label}</p>
+                <p className="text-2xl font-bold text-slate-950">{item.value}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Card>
+        <CardContent className="grid gap-3 p-4 md:grid-cols-[1fr_180px]">
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search student, register number or fee type"
+            leftIcon={<Search className="h-4 w-4 text-slate-400" />}
+          />
+          <select value={status} onChange={(event) => setStatus(event.target.value)} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm">
+            <option>All</option>
+            <option>Paid</option>
+            <option>Pending</option>
+            <option>Upcoming</option>
+            <option>Overdue</option>
+          </select>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[1000px] text-sm">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-50/80 text-left text-slate-500">
+                  <th className="px-4 py-3 font-medium">Student</th>
+                  <th className="px-4 py-3 font-medium">Fee type</th>
+                  <th className="px-4 py-3 text-right font-medium">Amount</th>
+                  <th className="px-4 py-3 font-medium">Due date</th>
+                  <th className="px-4 py-3 font-medium">Paid on</th>
+                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">Method</th>
+                  <th className="px-4 py-3 text-right font-medium">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((row) => (
+                  <tr key={row.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60">
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-3">
+                        <Avatar name={row.name} size="sm" />
+                        <div>
+                          <p className="font-semibold text-slate-900">{row.name}</p>
+                          <p className="font-mono text-xs text-slate-500">{row.regNo}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 text-slate-600">{row.feeType}</td>
+                    <td className="px-4 py-4 text-right font-semibold text-slate-900">₹{row.amount.toLocaleString('en-IN')}</td>
+                    <td className="px-4 py-4 text-slate-600">{row.dueDate}</td>
+                    <td className="px-4 py-4 text-slate-600">{row.paidDate ?? '-'}</td>
+                    <td className="px-4 py-4">
+                      <Badge
+                        variant={row.status === 'paid' ? 'success' : row.status === 'overdue' ? 'danger' : row.status === 'pending' ? 'warning' : 'secondary'}
+                        size="sm"
+                      >
+                        {row.status}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-4 text-slate-600">{row.method ?? '-'}</td>
+                    <td className="px-4 py-4 text-right">
+                      {row.status !== 'paid' ? (
+                        <Button size="sm" variant="outline" className="gap-2" onClick={() => markFeePaid(row.id, 'Demo UPI')}>
+                          <ReceiptText className="h-4 w-4" />
+                          Mark paid
+                        </Button>
+                      ) : (
+                        <span className="text-xs font-medium text-emerald-700">Completed</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
