@@ -6,12 +6,16 @@ import {
   DEMO_ASSIGNMENTS,
   DEMO_ATTENDANCE,
   DEMO_BOOKS,
+  DEMO_COURSES,
   DEMO_EXAMS,
   DEMO_FACULTY,
   DEMO_FEES,
   DEMO_MARKS,
+  DEMO_MESSAGES,
   DEMO_NOTICES,
+  DEMO_SUPPORT_TICKETS,
   DEMO_STUDENTS,
+  type AcademicCourseRecord,
   type AssignmentRecord,
   type AttendanceSession,
   type AttendanceStatus,
@@ -19,8 +23,10 @@ import {
   type FacultyRecord,
   type FeeRecord,
   type LibraryBookRecord,
+  type CommunicationMessage,
   type MarkRecord,
   type NoticeRecord,
+  type SupportTicketRecord,
   type StudentRecord,
 } from './demo-data'
 
@@ -47,6 +53,9 @@ export type WorkspaceSnapshot = {
   faculty: FacultyRecord[]
   books: LibraryBookRecord[]
   marks: MarkRecord[]
+  courses?: AcademicCourseRecord[]
+  messages?: CommunicationMessage[]
+  supportTickets?: SupportTicketRecord[]
   assignmentSubmissions?: AssignmentSubmissionRecord[]
 }
 
@@ -60,6 +69,9 @@ type EduState = {
   faculty: FacultyRecord[]
   books: LibraryBookRecord[]
   marks: MarkRecord[]
+  courses: AcademicCourseRecord[]
+  messages: CommunicationMessage[]
+  supportTickets: SupportTicketRecord[]
   assignmentSubmissions: AssignmentSubmissionRecord[]
   activity: ActivityEntry[]
   addStudent: (student: Omit<StudentRecord, 'id'>) => void
@@ -68,6 +80,12 @@ type EduState = {
   saveAttendance: (course: string, date: string, records: Record<string, AttendanceStatus>) => void
   addAssignment: (assignment: Omit<AssignmentRecord, 'id' | 'submissions'>) => void
   submitAssignment: (assignmentId: string, studentId: string) => void
+  addCourse: (course: Omit<AcademicCourseRecord, 'id'>) => void
+  toggleCourseStatus: (id: string) => void
+  sendMessage: (message: Omit<CommunicationMessage, 'id' | 'at' | 'unread'>) => void
+  markMessageRead: (id: string) => void
+  createSupportTicket: (ticket: Omit<SupportTicketRecord, 'id' | 'createdAt' | 'status'>) => void
+  updateSupportTicketStatus: (id: string, status: SupportTicketRecord['status']) => void
   addExam: (exam: Omit<ExamRecord, 'id'>) => void
   addFaculty: (faculty: Omit<FacultyRecord, 'id'>) => void
   addBook: (book: Omit<LibraryBookRecord, 'id'>) => void
@@ -103,6 +121,9 @@ export const useEduStore = create<EduState>()(
       faculty: clone(DEMO_FACULTY),
       books: clone(DEMO_BOOKS),
       marks: clone(DEMO_MARKS),
+      courses: clone(DEMO_COURSES),
+      messages: clone(DEMO_MESSAGES),
+      supportTickets: clone(DEMO_SUPPORT_TICKETS),
       assignmentSubmissions: [],
       activity: [
         activity('Demo workspace ready', 'EDU_ONE local-first data store initialized'),
@@ -221,6 +242,67 @@ export const useEduStore = create<EduState>()(
           }
         }),
 
+      addCourse: (course) =>
+        set((state) => {
+          const next: AcademicCourseRecord = { ...course, id: `course-${Date.now()}` }
+          return {
+            courses: [next, ...state.courses],
+            activity: [activity('Course added', `${next.code} • ${next.name}`), ...state.activity].slice(0, 50),
+          }
+        }),
+
+      toggleCourseStatus: (id) =>
+        set((state) => ({
+          courses: state.courses.map((course) =>
+            course.id === id
+              ? { ...course, status: course.status === 'active' ? 'inactive' : 'active' }
+              : course
+          ),
+        })),
+
+      sendMessage: (message) =>
+        set((state) => {
+          const next: CommunicationMessage = {
+            ...message,
+            id: `message-${Date.now()}`,
+            at: new Date().toISOString(),
+            unread: true,
+          }
+          return {
+            messages: [next, ...state.messages],
+            activity: [activity('Message sent', next.subject), ...state.activity].slice(0, 50),
+          }
+        }),
+
+      markMessageRead: (id) =>
+        set((state) => ({
+          messages: state.messages.map((message) =>
+            message.id === id ? { ...message, unread: false } : message
+          ),
+        })),
+
+      createSupportTicket: (ticket) =>
+        set((state) => {
+          const next: SupportTicketRecord = {
+            ...ticket,
+            id: `ticket-${Date.now()}`,
+            createdAt: new Date().toISOString(),
+            status: 'open',
+          }
+          return {
+            supportTickets: [next, ...state.supportTickets],
+            activity: [activity('Support ticket created', next.title), ...state.activity].slice(0, 50),
+          }
+        }),
+
+      updateSupportTicketStatus: (id, status) =>
+        set((state) => ({
+          supportTickets: state.supportTickets.map((ticket) =>
+            ticket.id === id ? { ...ticket, status } : ticket
+          ),
+          activity: [activity('Support ticket updated', `${id} • ${status}`), ...state.activity].slice(0, 50),
+        })),
+
       addExam: (exam) =>
         set((state) => {
           const next: ExamRecord = { ...exam, id: `exam-${Date.now()}` }
@@ -326,6 +408,9 @@ export const useEduStore = create<EduState>()(
           faculty: clone(snapshot.faculty),
           books: clone(snapshot.books),
           marks: clone(snapshot.marks),
+          courses: clone(snapshot.courses ?? DEMO_COURSES),
+          messages: clone(snapshot.messages ?? DEMO_MESSAGES),
+          supportTickets: clone(snapshot.supportTickets ?? DEMO_SUPPORT_TICKETS),
           assignmentSubmissions: clone(snapshot.assignmentSubmissions ?? []),
           activity: [activity('Workspace restored', 'Imported an EDU_ONE JSON snapshot'), ...state.activity].slice(0, 50),
         })),
@@ -341,6 +426,9 @@ export const useEduStore = create<EduState>()(
           faculty: clone(DEMO_FACULTY),
           books: clone(DEMO_BOOKS),
           marks: clone(DEMO_MARKS),
+          courses: clone(DEMO_COURSES),
+          messages: clone(DEMO_MESSAGES),
+          supportTickets: clone(DEMO_SUPPORT_TICKETS),
           assignmentSubmissions: [],
           activity: [activity('Demo data reset', 'Restored the default EDU_ONE workspace')],
         }),
@@ -358,6 +446,9 @@ export const useEduStore = create<EduState>()(
         faculty: state.faculty,
         books: state.books,
         marks: state.marks,
+        courses: state.courses,
+        messages: state.messages,
+        supportTickets: state.supportTickets,
         assignmentSubmissions: state.assignmentSubmissions,
         activity: state.activity,
       }),
