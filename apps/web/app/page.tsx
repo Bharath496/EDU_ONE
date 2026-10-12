@@ -142,10 +142,10 @@ export default function LoginPage() {
 
         <div className="space-y-8 text-white">
           <h1 className="text-4xl lg:text-5xl font-bold leading-tight">
-            One Platform. Every College. One Codebase.
+            One College OS. Every Core Workflow. One Codebase.
           </h1>
           <p className="text-lg text-primary-100 max-w-lg">
-            Streamline your institution with EduOne — academics, attendance, exams, fees, and communication in one modern, multi-tenant platform.
+            Explore a modern college operating-system concept covering academics, attendance, exams, fees, communication, analytics, and role-based workflows.
           </p>
 
           <div className="grid grid-cols-2 gap-4 pt-4">
@@ -167,7 +167,7 @@ export default function LoginPage() {
           <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
             <CheckCircle className="w-5 h-5 text-white" />
           </div>
-          <span>Trusted by 500+ institutions across India</span>
+          <span>Portfolio demo for modern multi-role college workflows</span>
         </div>
       </div>
 
