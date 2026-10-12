@@ -32,7 +32,15 @@ const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(
 
     return (
       <div ref={ref} className={cn('relative inline-block', className)} {...props}>
-        <div ref={triggerRef}>{trigger}</div>
+        <div
+          ref={triggerRef}
+          onClick={() => setOpen((value) => !value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') setOpen(false)
+          }}
+        >
+          {trigger}
+        </div>
         {open && (
           <>
             <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
