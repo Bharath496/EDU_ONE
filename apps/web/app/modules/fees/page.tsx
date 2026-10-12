@@ -62,8 +62,16 @@ export default function FeesPage() {
 
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('All')
+  const canManage = user?.role === 'College Admin'
+  const canPay = canManage || user?.role === 'Student' || user?.role === 'Parent'
+  const matchedStudent =
+    students.find((student) => student.name.toLowerCase() === user?.name.toLowerCase()) ??
+    students[0]
+  const visibleFees = canManage
+    ? fees
+    : fees.filter((fee) => fee.studentId === matchedStudent?.id)
 
-  const enriched = fees.map((fee) => {
+  const enriched = visibleFees.map((fee) => {
     const student = students.find((item) => item.id === fee.studentId)
     return {
       ...fee,
@@ -85,10 +93,10 @@ export default function FeesPage() {
     })
   }, [enriched, search, status])
 
-  const collected = fees.filter((item) => item.status === 'paid').reduce((sum, item) => sum + item.amount, 0)
-  const pending = fees.filter((item) => item.status === 'pending' || item.status === 'overdue').reduce((sum, item) => sum + item.amount, 0)
-  const overdue = fees.filter((item) => item.status === 'overdue').length
-  const collectionRate = fees.length ? Math.round((fees.filter((item) => item.status === 'paid').length / fees.length) * 100) : 0
+  const collected = visibleFees.filter((item) => item.status === 'paid').reduce((sum, item) => sum + item.amount, 0)
+  const pending = visibleFees.filter((item) => item.status === 'pending' || item.status === 'overdue').reduce((sum, item) => sum + item.amount, 0)
+  const overdue = visibleFees.filter((item) => item.status === 'overdue').length
+  const collectionRate = visibleFees.length ? Math.round((visibleFees.filter((item) => item.status === 'paid').length / visibleFees.length) * 100) : 0
 
   if (!isAuthenticated || !user) {
     router.push('/login')
@@ -101,7 +109,11 @@ export default function FeesPage() {
         <div>
           <p className="text-sm font-medium text-primary-600">{user.collegeName}</p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">Fee Management</h1>
-          <p className="mt-1 text-sm text-slate-500">Track dues, simulate payment completion, and export the current ledger.</p>
+          <p className="mt-1 text-sm text-slate-500">
+            {canManage
+              ? 'Track institution dues, simulate payment completion, and export the current ledger.'
+              : 'View the current student fee ledger and complete demo payments.'}
+          </p>
         </div>
         <Button variant="outline" size="sm" className="gap-2" onClick={() => downloadFees(filtered)}>
           <Download className="h-4 w-4" />
@@ -188,13 +200,15 @@ export default function FeesPage() {
                     </td>
                     <td className="px-4 py-4 text-slate-600">{row.method ?? '-'}</td>
                     <td className="px-4 py-4 text-right">
-                      {row.status !== 'paid' ? (
-                        <Button size="sm" variant="outline" className="gap-2" onClick={() => markFeePaid(row.id, 'Demo UPI')}>
+                      {row.status !== 'paid' && canPay ? (
+                        <Button size="sm" variant="outline" className="gap-2" onClick={() => markFeePaid(row.id, user?.role === 'College Admin' ? 'Admin Demo Entry' : 'Demo UPI')}>
                           <ReceiptText className="h-4 w-4" />
-                          Mark paid
+                          {user?.role === 'College Admin' ? 'Mark paid' : 'Pay demo'}
                         </Button>
-                      ) : (
+                      ) : row.status === 'paid' ? (
                         <span className="text-xs font-medium text-emerald-700">Completed</span>
+                      ) : (
+                        <span className="text-xs text-slate-400">View only</span>
                       )}
                     </td>
                   </tr>
