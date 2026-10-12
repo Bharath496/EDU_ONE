@@ -5,13 +5,21 @@ import { persist } from 'zustand/middleware'
 import {
   DEMO_ASSIGNMENTS,
   DEMO_ATTENDANCE,
+  DEMO_BOOKS,
+  DEMO_EXAMS,
+  DEMO_FACULTY,
   DEMO_FEES,
+  DEMO_MARKS,
   DEMO_NOTICES,
   DEMO_STUDENTS,
   type AssignmentRecord,
   type AttendanceSession,
   type AttendanceStatus,
+  type ExamRecord,
+  type FacultyRecord,
   type FeeRecord,
+  type LibraryBookRecord,
+  type MarkRecord,
   type NoticeRecord,
   type StudentRecord,
 } from './demo-data'
@@ -29,6 +37,10 @@ export type WorkspaceSnapshot = {
   assignments: AssignmentRecord[]
   notices: NoticeRecord[]
   fees: FeeRecord[]
+  exams: ExamRecord[]
+  faculty: FacultyRecord[]
+  books: LibraryBookRecord[]
+  marks: MarkRecord[]
 }
 
 type EduState = {
@@ -37,12 +49,21 @@ type EduState = {
   assignments: AssignmentRecord[]
   notices: NoticeRecord[]
   fees: FeeRecord[]
+  exams: ExamRecord[]
+  faculty: FacultyRecord[]
+  books: LibraryBookRecord[]
+  marks: MarkRecord[]
   activity: ActivityEntry[]
   addStudent: (student: Omit<StudentRecord, 'id'>) => void
   updateStudent: (id: string, patch: Partial<StudentRecord>) => void
   removeStudent: (id: string) => void
   saveAttendance: (course: string, date: string, records: Record<string, AttendanceStatus>) => void
   addAssignment: (assignment: Omit<AssignmentRecord, 'id' | 'submissions'>) => void
+  addExam: (exam: Omit<ExamRecord, 'id'>) => void
+  addFaculty: (faculty: Omit<FacultyRecord, 'id'>) => void
+  addBook: (book: Omit<LibraryBookRecord, 'id'>) => void
+  issueBook: (bookId: string) => void
+  updateMark: (id: string, internal: number, external: number) => void
   publishNotice: (notice: Omit<NoticeRecord, 'id' | 'views' | 'publishedAt'>) => void
   toggleNoticePin: (id: string) => void
   markFeePaid: (id: string, method?: string) => void
@@ -69,6 +90,10 @@ export const useEduStore = create<EduState>()(
       assignments: clone(DEMO_ASSIGNMENTS),
       notices: clone(DEMO_NOTICES),
       fees: clone(DEMO_FEES),
+      exams: clone(DEMO_EXAMS),
+      faculty: clone(DEMO_FACULTY),
+      books: clone(DEMO_BOOKS),
+      marks: clone(DEMO_MARKS),
       activity: [
         activity('Demo workspace ready', 'EDU_ONE local-first data store initialized'),
       ],
@@ -158,6 +183,59 @@ export const useEduStore = create<EduState>()(
           }
         }),
 
+      addExam: (exam) =>
+        set((state) => {
+          const next: ExamRecord = { ...exam, id: `exam-${Date.now()}` }
+          return {
+            exams: [next, ...state.exams],
+            activity: [activity('Exam scheduled', `${next.name} • ${next.date}`), ...state.activity].slice(0, 50),
+          }
+        }),
+
+      addFaculty: (faculty) =>
+        set((state) => {
+          const next: FacultyRecord = { ...faculty, id: `faculty-${Date.now()}` }
+          return {
+            faculty: [next, ...state.faculty],
+            activity: [activity('Faculty added', `${next.name} • ${next.department}`), ...state.activity].slice(0, 50),
+          }
+        }),
+
+      addBook: (book) =>
+        set((state) => {
+          const next: LibraryBookRecord = { ...book, id: `book-${Date.now()}` }
+          return {
+            books: [next, ...state.books],
+            activity: [activity('Library book added', next.title), ...state.activity].slice(0, 50),
+          }
+        }),
+
+      issueBook: (bookId) =>
+        set((state) => {
+          const target = state.books.find((item) => item.id === bookId)
+          if (!target || target.available <= 0) return state
+          return {
+            books: state.books.map((item) =>
+              item.id === bookId ? { ...item, available: item.available - 1 } : item
+            ),
+            activity: [activity('Book issued', target.title), ...state.activity].slice(0, 50),
+          }
+        }),
+
+      updateMark: (id, internal, external) =>
+        set((state) => ({
+          marks: state.marks.map((item) =>
+            item.id === id
+              ? {
+                  ...item,
+                  internal: Math.max(0, Math.min(50, internal)),
+                  external: Math.max(0, Math.min(50, external)),
+                }
+              : item
+          ),
+          activity: [activity('Marks updated', `Record ${id}`), ...state.activity].slice(0, 50),
+        })),
+
       publishNotice: (notice) =>
         set((state) => {
           const next: NoticeRecord = {
@@ -206,6 +284,10 @@ export const useEduStore = create<EduState>()(
           assignments: clone(snapshot.assignments),
           notices: clone(snapshot.notices),
           fees: clone(snapshot.fees),
+          exams: clone(snapshot.exams),
+          faculty: clone(snapshot.faculty),
+          books: clone(snapshot.books),
+          marks: clone(snapshot.marks),
           activity: [activity('Workspace restored', 'Imported an EDU_ONE JSON snapshot'), ...state.activity].slice(0, 50),
         })),
 
@@ -216,6 +298,10 @@ export const useEduStore = create<EduState>()(
           assignments: clone(DEMO_ASSIGNMENTS),
           notices: clone(DEMO_NOTICES),
           fees: clone(DEMO_FEES),
+          exams: clone(DEMO_EXAMS),
+          faculty: clone(DEMO_FACULTY),
+          books: clone(DEMO_BOOKS),
+          marks: clone(DEMO_MARKS),
           activity: [activity('Demo data reset', 'Restored the default EDU_ONE workspace')],
         }),
     }),
@@ -228,6 +314,10 @@ export const useEduStore = create<EduState>()(
         assignments: state.assignments,
         notices: state.notices,
         fees: state.fees,
+        exams: state.exams,
+        faculty: state.faculty,
+        books: state.books,
+        marks: state.marks,
         activity: state.activity,
       }),
     }
