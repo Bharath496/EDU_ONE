@@ -100,21 +100,18 @@ export default function FacultyPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
-          ['Total faculty', faculty.length, UserCheck, 'bg-blue-50 text-blue-700'],
-          ['Active', faculty.filter((item) => item.status === 'active').length, UserCheck, 'bg-emerald-50 text-emerald-700'],
-          ['Departments', new Set(faculty.map((item) => item.department)).size, BookOpen, 'bg-violet-50 text-violet-700'],
-          ['Courses handled', faculty.reduce((sum, item) => sum + item.courses, 0), GraduationCap, 'bg-amber-50 text-amber-700'],
-        ].map(([label, value, Icon, cls]) => {
-          const StatIcon = Icon as typeof UserCheck
-          return (
-            <Card key={String(label)}>
-              <CardContent className="flex items-center gap-4 p-5">
-                <div className={`rounded-2xl p-3 ${cls}`}><StatIcon className="h-6 w-6" /></div>
-                <div><p className="text-sm text-slate-500">{label}</p><p className="text-2xl font-bold text-slate-950">{value}</p></div>
-              </CardContent>
-            </Card>
-          )
-        })}
+          { label: 'Total faculty', value: faculty.length, icon: UserCheck, cls: 'bg-blue-50 text-blue-700' },
+          { label: 'Active', value: faculty.filter((item) => item.status === 'active').length, icon: UserCheck, cls: 'bg-emerald-50 text-emerald-700' },
+          { label: 'Departments', value: new Set(faculty.map((item) => item.department)).size, icon: BookOpen, cls: 'bg-violet-50 text-violet-700' },
+          { label: 'Courses handled', value: faculty.reduce((sum, item) => sum + item.courses, 0), icon: GraduationCap, cls: 'bg-amber-50 text-amber-700' },
+        ].map((item) => (
+          <Card key={item.label}>
+            <CardContent className="flex items-center gap-4 p-5">
+              <div className={`rounded-2xl p-3 ${item.cls}`}><item.icon className="h-6 w-6" /></div>
+              <div><p className="text-sm text-slate-500">{item.label}</p><p className="text-2xl font-bold text-slate-950">{item.value}</p></div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       <div className="max-w-md">
