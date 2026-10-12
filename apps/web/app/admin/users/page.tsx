@@ -25,7 +25,7 @@ export default function AdminUsersPage() {
   const [form, setForm] = useState({
     name: '',
     email: '',
-    role: 'College Admin' as 'College Admin' | 'Faculty' | 'Student' | 'Parent',
+    role: 'College Admin' as 'College Admin' | 'Faculty' | 'Student' | 'Parent' | 'Staff',
     tenantId: tenants[0]?.id ?? 'tenant-1',
     status: 'active' as 'active' | 'inactive',
   })
@@ -71,7 +71,7 @@ export default function AdminUsersPage() {
 
       <Card><CardContent className="grid gap-3 p-4 md:grid-cols-[1fr_200px]">
         <Input value={search} onChange={(e)=>setSearch(e.target.value)} placeholder="Search name or email" leftIcon={<Search className="h-4 w-4 text-slate-400"/>}/>
-        <select value={role} onChange={(e)=>setRole(e.target.value)} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm"><option>All</option><option>College Admin</option><option>Faculty</option><option>Student</option><option>Parent</option></select>
+        <select value={role} onChange={(e)=>setRole(e.target.value)} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm"><option>All</option><option>College Admin</option><option>Faculty</option><option>Student</option><option>Parent</option><option>Staff</option></select>
       </CardContent></Card>
 
       <Card><CardContent className="p-0"><div className="overflow-x-auto"><table className="w-full min-w-[900px] text-sm">
@@ -90,7 +90,7 @@ export default function AdminUsersPage() {
         <form id="platform-user-form" onSubmit={submit} className="grid gap-4 md:grid-cols-2">
           <Input label="Full name" value={form.name} onChange={(e)=>setForm({...form,name:e.target.value})} required/>
           <Input label="Email" type="email" value={form.email} onChange={(e)=>setForm({...form,email:e.target.value})} required/>
-          <div><label className="mb-1.5 block text-sm font-medium text-slate-700">Role</label><select value={form.role} onChange={(e)=>setForm({...form,role:e.target.value as typeof form.role})} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm"><option>College Admin</option><option>Faculty</option><option>Student</option><option>Parent</option></select></div>
+          <div><label className="mb-1.5 block text-sm font-medium text-slate-700">Role</label><select value={form.role} onChange={(e)=>setForm({...form,role:e.target.value as typeof form.role})} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm"><option>College Admin</option><option>Faculty</option><option>Student</option><option>Parent</option><option>Staff</option></select></div>
           <div><label className="mb-1.5 block text-sm font-medium text-slate-700">Institution</label><select value={form.tenantId} onChange={(e)=>setForm({...form,tenantId:e.target.value})} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm">{tenants.map((tenant)=><option key={tenant.id} value={tenant.id}>{tenant.name}</option>)}</select></div>
         </form>
       </Modal>
