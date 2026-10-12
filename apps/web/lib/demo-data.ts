@@ -212,3 +212,59 @@ export const DEMO_MARKS: MarkRecord[] = [
   { id: 'mark-9', studentId: '9', course: 'Artificial Intelligence', internal: 31, external: 30 },
   { id: 'mark-10', studentId: '10', course: 'Artificial Intelligence', internal: 28, external: 26 },
 ]
+
+
+export type AcademicCourseRecord = {
+  id: string
+  code: string
+  name: string
+  credits: number
+  department: string
+  semester: number
+  facultyId?: string
+  day: string
+  startTime: string
+  endTime: string
+  room: string
+  status: 'active' | 'inactive'
+}
+
+export type CommunicationMessage = {
+  id: string
+  sender: string
+  senderRole: string
+  recipient: string
+  subject: string
+  body: string
+  at: string
+  unread: boolean
+}
+
+export type SupportTicketRecord = {
+  id: string
+  title: string
+  category: string
+  createdBy: string
+  priority: 'low' | 'medium' | 'high'
+  status: 'open' | 'in-progress' | 'resolved'
+  createdAt: string
+}
+
+export const DEMO_COURSES: AcademicCourseRecord[] = [
+  { id: 'course-1', code: 'AIML-501', name: 'Artificial Intelligence', credits: 4, department: 'AIML', semester: 5, facultyId: 'fac-1', day: 'Monday', startTime: '09:00', endTime: '10:30', room: 'AI Lab', status: 'active' },
+  { id: 'course-2', code: 'AIML-502', name: 'Machine Learning', credits: 4, department: 'AIML', semester: 5, facultyId: 'fac-1', day: 'Thursday', startTime: '14:00', endTime: '15:30', room: 'AI Lab', status: 'active' },
+  { id: 'course-3', code: 'CSE-302', name: 'Database Systems', credits: 4, department: 'CSE', semester: 5, facultyId: 'fac-2', day: 'Tuesday', startTime: '09:30', endTime: '11:00', room: 'Lab 2', status: 'active' },
+  { id: 'course-4', code: 'CSE-301', name: 'Data Structures', credits: 4, department: 'CSE', semester: 5, facultyId: 'fac-4', day: 'Wednesday', startTime: '10:00', endTime: '11:30', room: 'Room 301', status: 'active' },
+  { id: 'course-5', code: 'CSE-303', name: 'Operating Systems', credits: 3, department: 'CSE', semester: 5, facultyId: 'fac-4', day: 'Friday', startTime: '09:00', endTime: '10:30', room: 'Room 305', status: 'active' },
+]
+
+export const DEMO_MESSAGES: CommunicationMessage[] = [
+  { id: 'msg-1', sender: 'Prof. Priya Sharma', senderRole: 'Faculty', recipient: 'Arjun Kumar', subject: 'Regarding internal marks', body: 'Please review the internal assessment feedback before the next class.', at: '2026-10-12T10:30:00', unread: true },
+  { id: 'msg-2', sender: 'Department Office', senderRole: 'Staff', recipient: 'Everyone', subject: 'Lab maintenance', body: 'AI Lab maintenance is scheduled after 4:30 PM on Friday.', at: '2026-10-11T15:15:00', unread: false },
+  { id: 'msg-3', sender: 'Training & Placement', senderRole: 'Staff', recipient: 'Students', subject: 'Career workshop', body: 'The resume and interview workshop registration is open for final-year students.', at: '2026-10-10T11:00:00', unread: false },
+]
+
+export const DEMO_SUPPORT_TICKETS: SupportTicketRecord[] = [
+  { id: 'ticket-1', title: 'Attendance record clarification', category: 'Academics', createdBy: 'Arjun Kumar', priority: 'medium', status: 'in-progress', createdAt: '2026-10-10T12:15:00' },
+  { id: 'ticket-2', title: 'Library account access', category: 'Library', createdBy: 'Priya Sharma', priority: 'low', status: 'resolved', createdAt: '2026-10-08T09:20:00' },
+]
