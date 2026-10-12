@@ -40,10 +40,21 @@ export function TopBar({ onMenuClick }: TopBarProps) {
 
   const quickActions = getQuickActions(user.role)
   const navigation = getWorkspaceNavigation(user.role)
+  const canViewAllAlerts =
+    user.role === 'College Admin' || user.role === 'Faculty' || user.role === 'Super Admin'
+  const matchedStudent =
+    students.find((student) => student.name.toLowerCase() === user.name.toLowerCase()) ??
+    students[0]
+  const scopedStudents = canViewAllAlerts ? students : matchedStudent ? [matchedStudent] : []
+  const scopedFees = canViewAllAlerts ? fees : fees.filter((fee) => fee.studentId === matchedStudent?.id)
+  const scopedNotices =
+    user.role === 'Student' || user.role === 'Parent'
+      ? notices.filter((notice) => notice.target !== 'Faculty')
+      : notices
   const alertCount =
-    students.filter((item) => item.attendance < 75 || item.cgpa < 6).length +
-    fees.filter((item) => item.status === 'overdue').length +
-    notices.filter((item) => item.priority === 'urgent' || item.priority === 'high').length
+    scopedStudents.filter((item) => item.attendance < 75 || item.cgpa < 6).length +
+    scopedFees.filter((item) => item.status === 'overdue').length +
+    scopedNotices.filter((item) => item.priority === 'urgent' || item.priority === 'high').length
 
   const canOpenAlerts = navigation.some((item) => item.href === '/modules/alerts')
 
