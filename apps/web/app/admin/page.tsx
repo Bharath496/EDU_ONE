@@ -7,6 +7,7 @@ import {
   BarChart3,
   Building2,
   CreditCard,
+  KeyRound,
   ShieldCheck,
   UserCheck,
   Users,
@@ -97,6 +98,7 @@ export default function AdminPage() {
           <CardContent className="grid gap-3">
             {[
               { href: '/admin/users', icon: Users, title: 'Users', desc: 'Add and activate platform users' },
+              { href: '/admin/roles', icon: KeyRound, title: 'Roles & Permissions', desc: 'Control institution module access' },
               { href: '/admin/billing', icon: CreditCard, title: 'Plans', desc: 'Inspect demo subscription values' },
               { href: '/admin/analytics', icon: BarChart3, title: 'Analytics', desc: 'Tenant and role distribution' },
               { href: '/admin/settings', icon: Activity, title: 'Platform settings', desc: 'Reset the platform demo store' },
