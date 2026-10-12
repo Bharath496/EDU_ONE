@@ -31,6 +31,12 @@ type ActivityEntry = {
   at: string
 }
 
+export type AssignmentSubmissionRecord = {
+  assignmentId: string
+  studentId: string
+  submittedAt: string
+}
+
 export type WorkspaceSnapshot = {
   students: StudentRecord[]
   attendanceSessions: AttendanceSession[]
@@ -41,6 +47,7 @@ export type WorkspaceSnapshot = {
   faculty: FacultyRecord[]
   books: LibraryBookRecord[]
   marks: MarkRecord[]
+  assignmentSubmissions?: AssignmentSubmissionRecord[]
 }
 
 type EduState = {
@@ -53,12 +60,14 @@ type EduState = {
   faculty: FacultyRecord[]
   books: LibraryBookRecord[]
   marks: MarkRecord[]
+  assignmentSubmissions: AssignmentSubmissionRecord[]
   activity: ActivityEntry[]
   addStudent: (student: Omit<StudentRecord, 'id'>) => void
   updateStudent: (id: string, patch: Partial<StudentRecord>) => void
   removeStudent: (id: string) => void
   saveAttendance: (course: string, date: string, records: Record<string, AttendanceStatus>) => void
   addAssignment: (assignment: Omit<AssignmentRecord, 'id' | 'submissions'>) => void
+  submitAssignment: (assignmentId: string, studentId: string) => void
   addExam: (exam: Omit<ExamRecord, 'id'>) => void
   addFaculty: (faculty: Omit<FacultyRecord, 'id'>) => void
   addBook: (book: Omit<LibraryBookRecord, 'id'>) => void
@@ -94,6 +103,7 @@ export const useEduStore = create<EduState>()(
       faculty: clone(DEMO_FACULTY),
       books: clone(DEMO_BOOKS),
       marks: clone(DEMO_MARKS),
+      assignmentSubmissions: [],
       activity: [
         activity('Demo workspace ready', 'EDU_ONE local-first data store initialized'),
       ],
@@ -180,6 +190,34 @@ export const useEduStore = create<EduState>()(
           return {
             assignments: [next, ...state.assignments],
             activity: [activity('Assignment created', next.title), ...state.activity].slice(0, 50),
+          }
+        }),
+
+      submitAssignment: (assignmentId, studentId) =>
+        set((state) => {
+          const keyExists = state.assignmentSubmissions.some(
+            (item) => item.assignmentId === assignmentId && item.studentId === studentId
+          )
+          if (keyExists) return state
+
+          const target = state.assignments.find((item) => item.id === assignmentId)
+          if (!target || target.status !== 'published') return state
+
+          return {
+            assignments: state.assignments.map((item) =>
+              item.id === assignmentId
+                ? { ...item, submissions: Math.min(item.totalStudents, item.submissions + 1) }
+                : item
+            ),
+            assignmentSubmissions: [
+              {
+                assignmentId,
+                studentId,
+                submittedAt: new Date().toISOString(),
+              },
+              ...state.assignmentSubmissions,
+            ],
+            activity: [activity('Assignment submitted', target.title), ...state.activity].slice(0, 50),
           }
         }),
 
@@ -288,6 +326,7 @@ export const useEduStore = create<EduState>()(
           faculty: clone(snapshot.faculty),
           books: clone(snapshot.books),
           marks: clone(snapshot.marks),
+          assignmentSubmissions: clone(snapshot.assignmentSubmissions ?? []),
           activity: [activity('Workspace restored', 'Imported an EDU_ONE JSON snapshot'), ...state.activity].slice(0, 50),
         })),
 
@@ -302,6 +341,7 @@ export const useEduStore = create<EduState>()(
           faculty: clone(DEMO_FACULTY),
           books: clone(DEMO_BOOKS),
           marks: clone(DEMO_MARKS),
+          assignmentSubmissions: [],
           activity: [activity('Demo data reset', 'Restored the default EDU_ONE workspace')],
         }),
     }),
@@ -318,6 +358,7 @@ export const useEduStore = create<EduState>()(
         faculty: state.faculty,
         books: state.books,
         marks: state.marks,
+        assignmentSubmissions: state.assignmentSubmissions,
         activity: state.activity,
       }),
     }
