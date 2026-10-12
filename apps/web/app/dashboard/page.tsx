@@ -1,126 +1,46 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { cn } from '@/lib/utils'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
-import { Badge } from '@/components/ui/Badge'
-import { useAuthStore } from '@/lib/auth-store'
-import { getQuickActions } from '@/lib/navigation'
-import { CommandPalette } from '@/components/ui/CommandPalette'
+import { useRouter } from 'next/navigation'
 import {
-  LayoutDashboard,
-  Users,
-  GraduationCap,
-  UserCheck,
+  Activity,
+  ArrowRight,
   CalendarCheck,
+  CheckCircle2,
   FilePen,
+  GraduationCap,
   IndianRupee,
   Megaphone,
-  Settings,
-  Building2,
-  Shield,
-  CreditCard,
-  Search,
-  Plus,
-  ArrowRight,
+  ShieldCheck,
+  Sparkles,
   TrendingUp,
-  TrendingDown,
-  Activity,
-  BookOpen,
-  Award,
-  HelpCircle,
-  CheckCircle,
-  AlertCircle,
+  UserCheck,
+  Users,
 } from 'lucide-react'
-
-const ROLE_ICONS = {
-  'Super Admin': Shield,
-  'College Admin': Building2,
-  Faculty: UserCheck,
-  Student: GraduationCap,
-  Parent: Users,
-}
-
-const STAT_CARDS = {
-  'Super Admin': [
-    { label: 'Total Colleges', value: '156', change: '+12%', trend: 'up', icon: Building2, color: 'blue' },
-    { label: 'Active Users', value: '48.2K', change: '+8.5%', trend: 'up', icon: Users, color: 'green' },
-    { label: 'Demo Revenue', value: '₹24L', change: '+15%', trend: 'up', icon: CreditCard, color: 'purple' },
-    { label: 'Open Requests', value: '23', change: '-5', trend: 'down', icon: HelpCircle, color: 'red' },
-  ],
-  'College Admin': [
-    { label: 'Total Students', value: '3,240', change: '+45', trend: 'up', icon: GraduationCap, color: 'blue' },
-    { label: 'Active Faculty', value: '186', change: '+3', trend: 'up', icon: UserCheck, color: 'green' },
-    { label: 'Attendance Rate', value: '94.2%', change: '+1.2%', trend: 'up', icon: CheckCircle, color: 'purple' },
-    { label: 'Fee Collection', value: '87%', change: '+5%', trend: 'up', icon: IndianRupee, color: 'amber' },
-  ],
-  Faculty: [
-    { label: 'My Classes', value: '6', change: '0', trend: 'neutral', icon: BookOpen, color: 'blue' },
-    { label: 'Total Students', value: '234', change: '+12', trend: 'up', icon: GraduationCap, color: 'green' },
-    { label: 'Attendance Avg', value: '92%', change: '+2%', trend: 'up', icon: CheckCircle, color: 'purple' },
-    { label: 'Pending Grading', value: '18', change: '-5', trend: 'down', icon: Award, color: 'red' },
-  ],
-  Student: [
-    { label: 'Attendance', value: '94%', change: '+2%', trend: 'up', icon: CheckCircle, color: 'green' },
-    { label: 'Current GPA', value: '8.7', change: '+0.2', trend: 'up', icon: Award, color: 'blue' },
-    { label: 'Assignments Due', value: '3', change: '-2', trend: 'down', icon: FilePen, color: 'amber' },
-    { label: 'Fee Balance', value: '₹12,000', change: 'Due in 5 days', trend: 'neutral', icon: IndianRupee, color: 'red' },
-  ],
-  Parent: [
-    { label: "Child's Attendance", value: '96%', change: '+1%', trend: 'up', icon: CheckCircle, color: 'green' },
-    { label: "Child's GPA", value: '8.9', change: '+0.1', trend: 'up', icon: Award, color: 'blue' },
-    { label: 'Fee Due', value: '₹8,000', change: 'Due in 10 days', trend: 'neutral', icon: IndianRupee, color: 'amber' },
-    { label: 'Upcoming Events', value: '3', change: 'This month', trend: 'neutral', icon: CalendarCheck, color: 'purple' },
-  ],
-}
-
-const RECENT_ACTIVITY = {
-  'Super Admin': [
-    { type: 'college', title: 'New college onboarded', desc: 'St. Xavier College, Mumbai', time: '2 min ago', icon: Building2, color: 'blue' },
-    { type: 'user', title: 'New admin registered', desc: 'Dr. Priya Sharma - Delhi', time: '15 min ago', icon: UserCheck, color: 'green' },
-    { type: 'billing', title: 'Payment received', desc: '$12,500 from PSG Tech', time: '1 hour ago', icon: CreditCard, color: 'purple' },
-    { type: 'support', title: 'Support ticket resolved', desc: 'Attendance sync issue', time: '3 hours ago', icon: HelpCircle, color: 'amber' },
-  ],
-  'College Admin': [
-    { type: 'admission', title: 'New student admitted', desc: 'Arjun Kumar - CSE 1st Year', time: '10 min ago', icon: GraduationCap, color: 'blue' },
-    { type: 'faculty', title: 'Faculty joined', desc: 'Prof. Meera Patel - ECE Dept', time: '2 hours ago', icon: UserCheck, color: 'green' },
-    { type: 'fee', title: 'Fee payment received', desc: 'Batch 2024 - Semester 2', time: '4 hours ago', icon: IndianRupee, color: 'purple' },
-    { type: 'notice', title: 'Notice published', desc: 'Exam schedule for Sem 2', time: '6 hours ago', icon: Megaphone, color: 'amber' },
-  ],
-  Faculty: [
-    { type: 'assignment', title: 'Assignment submitted', desc: 'Data Structures - 23 submissions', time: '30 min ago', icon: FilePen, color: 'blue' },
-    { type: 'attendance', title: 'Attendance marked', desc: 'CSE-201 - 92% present', time: '1 hour ago', icon: CalendarCheck, color: 'green' },
-    { type: 'grading', title: 'Grades published', desc: 'Mid-term Exam - CSE-301', time: '3 hours ago', icon: Award, color: 'purple' },
-    { type: 'class', title: 'Class scheduled', desc: 'Operating Systems - Tomorrow 10AM', time: '5 hours ago', icon: BookOpen, color: 'amber' },
-  ],
-  Student: [
-    { type: 'grade', title: 'Grade updated', desc: 'Data Structures - A grade', time: '1 hour ago', icon: Award, color: 'green' },
-    { type: 'assignment', title: 'Assignment due', desc: 'Operating Systems - Due tomorrow', time: '3 hours ago', icon: FilePen, color: 'amber' },
-    { type: 'attendance', title: 'Attendance marked', desc: 'Database Systems - Present', time: '5 hours ago', icon: CalendarCheck, color: 'blue' },
-    { type: 'notice', title: 'New announcement', desc: 'Cultural fest registration open', time: '1 day ago', icon: Megaphone, color: 'purple' },
-  ],
-  Parent: [
-    { type: 'grade', title: 'Grade update', desc: 'Mathematics - 92/100', time: '2 hours ago', icon: Award, color: 'green' },
-    { type: 'attendance', title: 'Absence alert', desc: 'Physics class - 1 period missed', time: '4 hours ago', icon: AlertCircle, color: 'red' },
-    { type: 'fee', title: 'Fee reminder', desc: 'Semester 3 fees due in 7 days', time: '1 day ago', icon: IndianRupee, color: 'amber' },
-    { type: 'event', title: 'PTM scheduled', desc: 'Parent-Teacher Meeting - Next Friday', time: '2 days ago', icon: CalendarCheck, color: 'blue' },
-  ],
-}
+import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
+import { useAuthStore } from '@/lib/auth-store'
+import { getQuickActions } from '@/lib/navigation'
+import { useEduStore } from '@/lib/edu-store'
 
 export default function DashboardPage() {
   const { user, isAuthenticated, isLoading } = useAuthStore()
   const router = useRouter()
 
+  const students = useEduStore((state) => state.students)
+  const attendanceSessions = useEduStore((state) => state.attendanceSessions)
+  const assignments = useEduStore((state) => state.assignments)
+  const notices = useEduStore((state) => state.notices)
+  const fees = useEduStore((state) => state.fees)
+  const activity = useEduStore((state) => state.activity)
+
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-primary-600 flex items-center justify-center animate-pulse">
-            <span className="text-white font-bold text-xl">E</span>
-          </div>
-          <p className="text-slate-600">Loading dashboard...</p>
+      <div className="flex min-h-[65vh] items-center justify-center">
+        <div className="text-center">
+          <div className="mx-auto flex h-12 w-12 animate-pulse items-center justify-center rounded-2xl bg-primary-600 text-xl font-bold text-white">E</div>
+          <p className="mt-3 text-sm text-slate-500">Loading EDU_ONE workspace...</p>
         </div>
       </div>
     )
@@ -131,176 +51,219 @@ export default function DashboardPage() {
     return null
   }
 
-  const roleStats = STAT_CARDS[user.role as keyof typeof STAT_CARDS] || STAT_CARDS['Student']
-  const recentActivities = RECENT_ACTIVITY[user.role as keyof typeof RECENT_ACTIVITY] || RECENT_ACTIVITY['Student']
+  const avgAttendance = students.length
+    ? Math.round(students.reduce((sum, student) => sum + student.attendance, 0) / students.length)
+    : 0
+  const atRisk = students.filter((student) => student.attendance < 75 || student.cgpa < 6).length
+  const collected = fees.filter((item) => item.status === 'paid').reduce((sum, item) => sum + item.amount, 0)
+  const totalFees = fees.reduce((sum, item) => sum + item.amount, 0)
+  const feeRate = totalFees ? Math.round((collected / totalFees) * 100) : 0
+  const dueAssignments = assignments.filter((item) => item.status === 'published').length
+  const urgentNotices = notices.filter((item) => item.priority === 'urgent' || item.priority === 'high').length
   const quickActions = getQuickActions(user.role)
-  const RoleIcon = ROLE_ICONS[user.role as keyof typeof ROLE_ICONS] || GraduationCap
 
-  const getStatColor = (color: string) => {
-    const colors = {
-      blue: 'bg-blue-50 text-blue-700 border-blue-200',
-      green: 'bg-green-50 text-green-700 border-green-200',
-      purple: 'bg-purple-50 text-purple-700 border-purple-200',
-      amber: 'bg-amber-50 text-amber-700 border-amber-200',
-      red: 'bg-red-50 text-red-700 border-red-200',
-    }
-    return colors[color as keyof typeof colors] || colors.blue
-  }
+  const metrics = [
+    {
+      label: 'Students',
+      value: students.length,
+      note: `${students.filter((item) => item.status === 'active').length} active`,
+      icon: GraduationCap,
+      cls: 'bg-blue-50 text-blue-700',
+    },
+    {
+      label: 'Attendance',
+      value: `${avgAttendance}%`,
+      note: `${attendanceSessions.length} saved sessions`,
+      icon: CalendarCheck,
+      cls: 'bg-violet-50 text-violet-700',
+    },
+    {
+      label: 'Fee collection',
+      value: `${feeRate}%`,
+      note: `₹${collected.toLocaleString('en-IN')} collected`,
+      icon: IndianRupee,
+      cls: 'bg-emerald-50 text-emerald-700',
+    },
+    {
+      label: 'Needs attention',
+      value: atRisk,
+      note: 'attendance or CGPA risk',
+      icon: UserCheck,
+      cls: 'bg-amber-50 text-amber-700',
+    },
+  ]
+
+  const departmentRows = Array.from(new Set(students.map((item) => item.department)))
+    .map((department) => {
+      const group = students.filter((item) => item.department === department)
+      return {
+        department,
+        students: group.length,
+        attendance: Math.round(group.reduce((sum, item) => sum + item.attendance, 0) / Math.max(group.length, 1)),
+        cgpa: (group.reduce((sum, item) => sum + item.cgpa, 0) / Math.max(group.length, 1)).toFixed(1),
+      }
+    })
+    .sort((a, b) => b.students - a.students)
 
   return (
-    <div className="p-4 lg:p-6">
-      <div className="mb-6 lg:mb-8">
-        <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
+    <div className="space-y-6 p-4 lg:p-6">
+      <section className="overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-950 via-indigo-950 to-primary-900 p-6 text-white lg:p-8">
+        <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr] lg:items-end">
           <div>
-            <p className="text-sm text-slate-500">EduOne Platform</p>
-            <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 flex items-center gap-3">
-              Good morning, {user.name.split(' ')[0]}
-              <RoleIcon className="w-6 h-6 text-primary-600" />
+            <div className="mb-3 flex flex-wrap items-center gap-2">
               <Badge variant="primary" size="sm">{user.role}</Badge>
+              <span className="text-xs font-medium text-indigo-200">Local-first portfolio workspace</span>
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight lg:text-4xl">
+              Welcome back, {user.name.split(' ')[0]}
             </h1>
-            <p className="text-slate-600 mt-1">{user.collegeName}</p>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-indigo-100 lg:text-base">
+              EDU_ONE now behaves like one connected college workspace. Student records, attendance, fees,
+              assignments and notices share the same persisted demo data instead of living as unrelated mock screens.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Link href="/modules/students"><Button size="sm" className="gap-2 bg-white text-slate-950 hover:bg-slate-100">Open students <ArrowRight className="h-4 w-4" /></Button></Link>
+              <Link href="/modules/student-intelligence"><Button variant="outline" size="sm" className="gap-2 border-white/30 bg-white/10 text-white hover:bg-white/20"><Sparkles className="h-4 w-4" />Student intelligence</Button></Link>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <CommandPalette
-              trigger={
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Search className="w-4 h-4" />
-                  <span>Search (⌘K)</span>
-                </Button>
-              }
-              isOpen={false}
-              onClose={() => {}}
-            >
-              <CommandPalette.Section label="Quick Actions">
-                <CommandPalette.Item href="/dashboard" label="Dashboard" icon={<LayoutDashboard className="w-4 h-4" />} />
-                <CommandPalette.Item href="/modules/students" label="Students" icon={<GraduationCap className="w-4 h-4" />} />
-                <CommandPalette.Item href="/modules/faculty" label="Faculty" icon={<UserCheck className="w-4 h-4" />} />
-                <CommandPalette.Item href="/modules/attendance" label="Attendance" icon={<CalendarCheck className="w-4 h-4" />} />
-                <CommandPalette.Item href="/modules/fees" label="Fees" icon={<IndianRupee className="w-4 h-4" />} />
-              </CommandPalette.Section>
-            </CommandPalette>
-            <Button variant="primary" size="sm" className="gap-2">
-              <Plus className="w-4 h-4" />
-              <span>Quick Action</span>
-              <ArrowRight className="w-4 h-4" />
-            </Button>
+          <div className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.14em] text-indigo-200">Workspace health</p>
+                <p className="mt-1 text-2xl font-bold">Ready</p>
+              </div>
+              <ShieldCheck className="h-9 w-9 text-emerald-300" />
+            </div>
+            <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
+              <div className="rounded-xl bg-white/10 p-2"><p className="text-lg font-bold">{students.length}</p><p className="text-indigo-200">students</p></div>
+              <div className="rounded-xl bg-white/10 p-2"><p className="text-lg font-bold">{assignments.length}</p><p className="text-indigo-200">assignments</p></div>
+              <div className="rounded-xl bg-white/10 p-2"><p className="text-lg font-bold">{notices.length}</p><p className="text-indigo-200">notices</p></div>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
-        {roleStats.map((stat, index) => (
-          <Card key={index} className="hover:shadow-soft transition-shadow">
-            <CardContent className="p-5">
-              <div className="flex items-start justify-between">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-500">{stat.label}</p>
-                  <p className="text-2xl lg:text-3xl font-bold text-slate-900 mt-1">{stat.value}</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    {stat.trend === 'up' && <TrendingUp className="w-4 h-4 text-green-600" />}
-                    {stat.trend === 'down' && <TrendingDown className="w-4 h-4 text-red-600" />}
-                    {stat.trend === 'neutral' && <Activity className="w-4 h-4 text-slate-400" />}
-                    <span className={cn('text-sm font-medium', stat.trend === 'up' ? 'text-green-600' : stat.trend === 'down' ? 'text-red-600' : 'text-slate-500')}>
-                      {stat.change}
-                    </span>
-                  </div>
-                </div>
-                <div className={cn('p-3 rounded-2xl', getStatColor(stat.color))}>
-                  <stat.icon className="w-6 h-6" />
-                </div>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {metrics.map((metric) => (
+          <Card key={metric.label}>
+            <CardContent className="flex items-center gap-4 p-5">
+              <div className={`rounded-2xl p-3 ${metric.cls}`}><metric.icon className="h-6 w-6" /></div>
+              <div>
+                <p className="text-sm text-slate-500">{metric.label}</p>
+                <p className="text-2xl font-bold text-slate-950">{metric.value}</p>
+                <p className="text-xs text-slate-400">{metric.note}</p>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
-        <div className="lg:col-span-2">
-          <Card className="h-full">
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <div>
-                <CardTitle className="text-lg">Quick Actions</CardTitle>
-                <CardDescription>Common tasks for your role</CardDescription>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {quickActions.map((action) => (
-                  <Link
-                    key={action.href}
-                    href={action.href}
-                    className="p-4 rounded-xl border border-slate-200 hover:border-primary-300 hover:bg-primary-50 transition-colors text-left"
-                  >
-                    <div className="w-10 h-10 rounded-lg bg-primary-100 text-primary-600 flex items-center justify-center mb-3">
-                      <action.icon className="w-5 h-5" />
-                    </div>
-                    <p className="font-medium text-slate-900">{action.label}</p>
-                    <p className="text-xs text-slate-500 mt-1">{action.description}</p>
-                  </Link>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      <div className="grid gap-6 xl:grid-cols-[1.45fr_1fr]">
+        <Card>
+          <CardHeader>
+            <CardTitle>Department snapshot</CardTitle>
+            <CardDescription>Live summary from the same student store used across the app.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-100 text-left text-slate-500">
+                    <th className="py-3 font-medium">Department</th>
+                    <th className="py-3 text-center font-medium">Students</th>
+                    <th className="py-3 text-center font-medium">Attendance</th>
+                    <th className="py-3 text-center font-medium">CGPA</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {departmentRows.map((row) => (
+                    <tr key={row.department} className="border-b border-slate-100 last:border-0">
+                      <td className="py-3 font-semibold text-slate-900">{row.department}</td>
+                      <td className="py-3 text-center text-slate-600">{row.students}</td>
+                      <td className="py-3 text-center">
+                        <span className={row.attendance >= 75 ? 'font-semibold text-emerald-700' : 'font-semibold text-amber-700'}>{row.attendance}%</span>
+                      </td>
+                      <td className="py-3 text-center font-semibold text-slate-700">{row.cgpa}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
 
-        <div className="space-y-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <div>
-                <CardTitle className="text-lg">Recent Activity</CardTitle>
-                <CardDescription>Latest updates in your institution</CardDescription>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="space-y-3">
-                {recentActivities.map((activity, index) => (
-                  <div key={index} className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors">
-                    <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0', getStatColor(activity.color))}>
-                      <activity.icon className="w-5 h-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-900">{activity.title}</p>
-                      <p className="text-sm text-slate-500 truncate">{activity.desc}</p>
-                      <p className="text-xs text-slate-400 mt-1">{activity.time}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Current priorities</CardTitle>
+            <CardDescription>Useful signals rather than decorative dashboard numbers.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {[
+              { icon: FilePen, label: 'Published assignments', value: dueAssignments, href: '/modules/assignments', cls: 'bg-blue-50 text-blue-700' },
+              { icon: Megaphone, label: 'High-priority notices', value: urgentNotices, href: '/modules/notices', cls: 'bg-amber-50 text-amber-700' },
+              { icon: Users, label: 'Students needing attention', value: atRisk, href: '/modules/student-intelligence', cls: 'bg-red-50 text-red-700' },
+              { icon: CheckCircle2, label: 'Saved attendance sessions', value: attendanceSessions.length, href: '/modules/attendance', cls: 'bg-emerald-50 text-emerald-700' },
+            ].map((item) => (
+              <Link key={item.label} href={item.href} className="flex items-center gap-3 rounded-xl border border-slate-100 p-3 transition-colors hover:bg-slate-50">
+                <div className={`rounded-xl p-2.5 ${item.cls}`}><item.icon className="h-5 w-5" /></div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-slate-900">{item.label}</p>
+                </div>
+                <span className="text-lg font-bold text-slate-950">{item.value}</span>
+              </Link>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <div>
-                <CardTitle className="text-lg">My Schedule</CardTitle>
-                <CardDescription>Today's classes and events</CardDescription>
+      <div className="grid gap-6 xl:grid-cols-[1fr_1.2fr]">
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick actions</CardTitle>
+            <CardDescription>Role-aware navigation for {user.role}.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-2">
+            {quickActions.slice(0, 6).map((action) => (
+              <Link key={action.href} href={action.href} className="rounded-xl border border-slate-200 p-4 transition-all hover:-translate-y-0.5 hover:border-primary-300 hover:bg-primary-50/40">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-100 text-primary-700">
+                  <action.icon className="h-4 w-4" />
+                </div>
+                <p className="mt-3 font-semibold text-slate-900">{action.label}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">{action.description}</p>
+              </Link>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Activity log</CardTitle>
+            <CardDescription>Recent actions recorded by the browser workspace.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {activity.slice(0, 7).map((entry) => (
+              <div key={entry.id} className="flex items-start gap-3 rounded-xl bg-slate-50 p-3">
+                <div className="mt-0.5 rounded-lg bg-white p-2 text-primary-600 shadow-sm"><Activity className="h-4 w-4" /></div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-slate-900">{entry.action}</p>
+                  <p className="truncate text-xs text-slate-500">{entry.detail}</p>
+                </div>
+                <span className="text-[11px] text-slate-400">{new Date(entry.at).toLocaleDateString('en-IN')}</span>
               </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="space-y-3">
-                {[
-                  { time: '09:00 AM', subject: 'Data Structures', room: 'Lab 3', type: 'class', status: 'upcoming' },
-                  { time: '11:00 AM', subject: 'Database Systems', room: 'Room 204', type: 'class', status: 'current' },
-                  { time: '02:00 PM', subject: 'Operating Systems', room: 'Room 101', type: 'lab', status: 'upcoming' },
-                  { time: '04:00 PM', subject: 'Project Review', room: 'Conference Room', type: 'meeting', status: 'upcoming' },
-                ].map((item, index) => (
-                  <div key={index} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50">
-                    <div className="w-14 text-right text-sm font-medium text-slate-600">{item.time}</div>
-                    <div className={cn('w-2 h-full rounded-l-2xl', item.status === 'current' ? 'bg-primary-500' : 'bg-slate-200')} />
-                    <div className="flex-1">
-                      <p className="font-medium text-slate-900">{item.subject}</p>
-                      <p className="text-sm text-slate-500">{item.room} • {item.type}</p>
-                    </div>
-                    {item.status === 'current' && (
-                      <Badge variant="primary" size="sm">Live</Badge>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
+        <div className="flex items-center gap-2 font-medium text-slate-800">
+          <TrendingUp className="h-4 w-4 text-primary-600" />
+          Upgrade status
         </div>
+        <p className="mt-1">
+          Core portfolio workflows are now connected through a persistent local data layer. This keeps the demo free while making interactions real instead of static screenshots wearing buttons.
+        </p>
       </div>
     </div>
-      )
+  )
 }
