@@ -25,6 +25,7 @@ export default function ExamsPage() {
   const addExam = useEduStore((state) => state.addExam)
   const [search, setSearch] = useState('')
   const [open, setOpen] = useState(false)
+  const canManage = user?.role === 'College Admin' || user?.role === 'Faculty'
   const [form, setForm] = useState({
     name: '',
     course: 'Artificial Intelligence',
@@ -39,7 +40,8 @@ export default function ExamsPage() {
     venue: 'Hall A',
   })
 
-  const filtered = exams.filter((exam) => {
+  const visibleExams = canManage ? exams : exams.filter((exam) => exam.status !== 'draft')
+  const filtered = visibleExams.filter((exam) => {
     const needle = search.trim().toLowerCase()
     return (
       !needle ||
@@ -56,7 +58,7 @@ export default function ExamsPage() {
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
-    if (!form.name.trim()) return
+    if (!canManage || !form.name.trim()) return
     addExam({ ...form, name: form.name.trim() })
     setOpen(false)
     setForm({ ...form, name: '' })
@@ -68,20 +70,26 @@ export default function ExamsPage() {
         <div>
           <p className="text-sm font-medium text-primary-600">{user.collegeName}</p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">Exams</h1>
-          <p className="mt-1 text-sm text-slate-500">Schedule and track assessments in the persistent demo workspace.</p>
+          <p className="mt-1 text-sm text-slate-500">
+            {canManage
+              ? 'Schedule and track assessments in the persistent demo workspace.'
+              : 'Read-only exam schedule for the current student or parent workspace.'}
+          </p>
         </div>
-        <Button size="sm" className="gap-2" onClick={() => setOpen(true)}>
-          <Plus className="h-4 w-4" />
-          Schedule exam
-        </Button>
+        {canManage && (
+          <Button size="sm" className="gap-2" onClick={() => setOpen(true)}>
+            <Plus className="h-4 w-4" />
+            Schedule exam
+          </Button>
+        )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
-          { label: 'Total exams', value: exams.length, icon: ClipboardList, cls: 'bg-blue-50 text-blue-700' },
-          { label: 'Upcoming', value: exams.filter((item) => item.status === 'upcoming').length, icon: Calendar, cls: 'bg-violet-50 text-violet-700' },
-          { label: 'Ongoing', value: exams.filter((item) => item.status === 'ongoing').length, icon: Clock3, cls: 'bg-amber-50 text-amber-700' },
-          { label: 'Completed', value: exams.filter((item) => item.status === 'completed').length, icon: Award, cls: 'bg-emerald-50 text-emerald-700' },
+          { label: 'Total exams', value: visibleExams.length, icon: ClipboardList, cls: 'bg-blue-50 text-blue-700' },
+          { label: 'Upcoming', value: visibleExams.filter((item) => item.status === 'upcoming').length, icon: Calendar, cls: 'bg-violet-50 text-violet-700' },
+          { label: 'Ongoing', value: visibleExams.filter((item) => item.status === 'ongoing').length, icon: Clock3, cls: 'bg-amber-50 text-amber-700' },
+          { label: 'Completed', value: visibleExams.filter((item) => item.status === 'completed').length, icon: Award, cls: 'bg-emerald-50 text-emerald-700' },
         ].map((item) => (
           <Card key={item.label}>
             <CardContent className="flex items-center gap-4 p-5">
@@ -121,7 +129,7 @@ export default function ExamsPage() {
       </div>
 
       <Modal
-        open={open}
+        open={canManage && open}
         onClose={() => setOpen(false)}
         title="Schedule exam"
         description="Add an assessment to the local EDU_ONE workspace."
