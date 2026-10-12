@@ -21,10 +21,15 @@ import {
   Bell,
   Plus,
   User,
+  MessageSquare,
+  CircleHelp,
+  BookMarked,
+  KeyRound,
 } from 'lucide-react'
 
 export const GLOBAL_NAV: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, description: 'Overview and current priorities' },
+  { label: 'Academics', href: '/modules/academics', icon: BookMarked, description: 'Courses, subjects, timetable and faculty' },
   { label: 'Students', href: '/modules/students', icon: GraduationCap, description: 'Student records and academic profile data' },
   { label: 'Faculty', href: '/modules/faculty', icon: UserCheck, description: 'Faculty directory and teaching staff' },
   { label: 'My Classes', href: '/modules/my-classes', icon: BookOpen, description: 'Weekly class schedule' },
@@ -34,10 +39,12 @@ export const GLOBAL_NAV: NavItem[] = [
   { label: 'Marks', href: '/modules/marks', icon: Award, description: 'Marks, grades and pass status' },
   { label: 'Library', href: '/modules/library', icon: Library, description: 'Catalog and inventory workflows' },
   { label: 'Fees', href: '/modules/fees', icon: IndianRupee, description: 'Fee ledger and payment status' },
-  { label: 'Notices', href: '/modules/notices', icon: Megaphone, description: 'Announcements and communication' },
+  { label: 'Communication', href: '/modules/communication', icon: MessageSquare, description: 'Messages, announcements and contacts' },
+  { label: 'Notices', href: '/modules/notices', icon: Megaphone, description: 'Announcements and notice publishing' },
   { label: 'Alerts', href: '/modules/alerts', icon: Bell, description: 'Cross-module alerts and reminders' },
   { label: 'Reports', href: '/modules/reports', icon: FileText, description: 'CSV exports and summaries' },
   { label: 'Student Intelligence', href: '/modules/student-intelligence', icon: BarChart3, description: 'Explainable academic-risk monitoring' },
+  { label: 'Help & Support', href: '/modules/help', icon: CircleHelp, description: 'FAQs and support tickets' },
   { label: 'Profile', href: '/modules/profile', icon: User, description: 'Demo account profile' },
   { label: 'Settings', href: '/modules/settings', icon: Settings, description: 'Preferences, backup and restore' },
 ]
@@ -46,6 +53,7 @@ export const ADMIN_NAV: NavItem[] = [
   { label: 'Admin Console', href: '/admin', icon: Shield, description: 'Platform demo overview' },
   { label: 'Institutions', href: '/admin/colleges', icon: Building2, description: 'Manage fictional demo tenants' },
   { label: 'Platform Users', href: '/admin/users', icon: Users, description: 'Manage demo platform users' },
+  { label: 'Roles & Permissions', href: '/admin/roles', icon: KeyRound, description: 'Configure module access by institution role' },
   { label: 'Plans', href: '/admin/billing', icon: CreditCard, description: 'Illustrative plan ledger' },
   { label: 'Platform Analytics', href: '/admin/analytics', icon: BarChart3, description: 'Demo tenant and user analytics' },
   { label: 'Platform Settings', href: '/admin/settings', icon: Settings, description: 'Local platform-demo controls' },
@@ -53,57 +61,79 @@ export const ADMIN_NAV: NavItem[] = [
 
 const byHref = (hrefs: string[]) => GLOBAL_NAV.filter((item) => hrefs.includes(item.href))
 
-export function getWorkspaceNavigation(role: string): NavItem[] {
+const DEFAULT_ROLE_NAV: Record<string, string[]> = {
+  'College Admin': GLOBAL_NAV.map((item) => item.href),
+  Faculty: [
+    '/dashboard',
+    '/modules/academics',
+    '/modules/my-classes',
+    '/modules/students',
+    '/modules/attendance',
+    '/modules/exams',
+    '/modules/assignments',
+    '/modules/marks',
+    '/modules/library',
+    '/modules/communication',
+    '/modules/notices',
+    '/modules/alerts',
+    '/modules/reports',
+    '/modules/student-intelligence',
+    '/modules/help',
+    '/modules/profile',
+    '/modules/settings',
+  ],
+  Student: [
+    '/dashboard',
+    '/modules/academics',
+    '/modules/attendance',
+    '/modules/exams',
+    '/modules/assignments',
+    '/modules/marks',
+    '/modules/library',
+    '/modules/fees',
+    '/modules/communication',
+    '/modules/notices',
+    '/modules/alerts',
+    '/modules/help',
+    '/modules/profile',
+    '/modules/settings',
+  ],
+  Parent: [
+    '/dashboard',
+    '/modules/academics',
+    '/modules/attendance',
+    '/modules/marks',
+    '/modules/fees',
+    '/modules/communication',
+    '/modules/notices',
+    '/modules/alerts',
+    '/modules/help',
+    '/modules/profile',
+    '/modules/settings',
+  ],
+  Staff: [
+    '/dashboard',
+    '/modules/academics',
+    '/modules/students',
+    '/modules/attendance',
+    '/modules/library',
+    '/modules/fees',
+    '/modules/communication',
+    '/modules/notices',
+    '/modules/alerts',
+    '/modules/help',
+    '/modules/profile',
+    '/modules/settings',
+  ],
+}
+
+export function getWorkspaceNavigation(role: string, allowedHrefs?: string[]): NavItem[] {
   if (role === 'Super Admin') {
-    return [...ADMIN_NAV, ...byHref(['/dashboard', '/modules/alerts', '/modules/reports', '/modules/profile', '/modules/settings'])]
+    return [...ADMIN_NAV, ...byHref(['/dashboard', '/modules/alerts', '/modules/reports', '/modules/help', '/modules/profile', '/modules/settings'])]
   }
-  if (role === 'College Admin') return GLOBAL_NAV
-  if (role === 'Faculty') {
-    return byHref([
-      '/dashboard',
-      '/modules/my-classes',
-      '/modules/students',
-      '/modules/attendance',
-      '/modules/exams',
-      '/modules/assignments',
-      '/modules/marks',
-      '/modules/library',
-      '/modules/notices',
-      '/modules/alerts',
-      '/modules/reports',
-      '/modules/student-intelligence',
-      '/modules/profile',
-      '/modules/settings',
-    ])
-  }
-  if (role === 'Student') {
-    return byHref([
-      '/dashboard',
-      '/modules/attendance',
-      '/modules/exams',
-      '/modules/assignments',
-      '/modules/marks',
-      '/modules/library',
-      '/modules/fees',
-      '/modules/notices',
-      '/modules/alerts',
-      '/modules/profile',
-      '/modules/settings',
-    ])
-  }
-  if (role === 'Parent') {
-    return byHref([
-      '/dashboard',
-      '/modules/attendance',
-      '/modules/marks',
-      '/modules/fees',
-      '/modules/notices',
-      '/modules/alerts',
-      '/modules/profile',
-      '/modules/settings',
-    ])
-  }
-  return byHref(['/dashboard', '/modules/profile', '/modules/settings'])
+
+  const hrefs = allowedHrefs?.length ? allowedHrefs : (DEFAULT_ROLE_NAV[role] ?? ['/dashboard', '/modules/profile', '/modules/settings'])
+  return byHref(hrefs)
 }
 
 export function getQuickActions(role: string): QuickAction[] {
@@ -111,11 +141,12 @@ export function getQuickActions(role: string): QuickAction[] {
     'Super Admin': [
       { label: 'Add Institution', href: '/admin/colleges', icon: Plus, description: 'Open the functional tenant manager' },
       { label: 'Platform Users', href: '/admin/users', icon: Users, description: 'Manage demo users' },
+      { label: 'Roles & Permissions', href: '/admin/roles', icon: KeyRound, description: 'Configure module access' },
       { label: 'Platform Analytics', href: '/admin/analytics', icon: BarChart3, description: 'Inspect demo platform metrics' },
     ],
     'College Admin': [
       { label: 'Open Students', href: '/modules/students', icon: GraduationCap, description: 'Manage student records' },
-      { label: 'Mark Attendance', href: '/modules/attendance', icon: CalendarCheck, description: 'Open attendance workspace' },
+      { label: 'Academic Setup', href: '/modules/academics', icon: BookMarked, description: 'Manage course catalog' },
       { label: 'Publish Notice', href: '/modules/notices', icon: Megaphone, description: 'Open announcement publisher' },
       { label: 'Run Reports', href: '/modules/reports', icon: FileText, description: 'Export current workspace data' },
     ],
@@ -126,8 +157,8 @@ export function getQuickActions(role: string): QuickAction[] {
       { label: 'Enter Marks', href: '/modules/marks', icon: Award, description: 'Edit marks and grades' },
     ],
     Student: [
+      { label: 'Academics', href: '/modules/academics', icon: BookMarked, description: 'View courses and timetable' },
       { label: 'View Attendance', href: '/modules/attendance', icon: CalendarCheck, description: 'Check attendance data' },
-      { label: 'Check Marks', href: '/modules/marks', icon: Award, description: 'View grades' },
       { label: 'Assignments', href: '/modules/assignments', icon: FilePen, description: 'Review coursework' },
       { label: 'Fee Status', href: '/modules/fees', icon: IndianRupee, description: 'View dues and payments' },
     ],
@@ -137,16 +168,28 @@ export function getQuickActions(role: string): QuickAction[] {
       { label: 'Fee Status', href: '/modules/fees', icon: IndianRupee, description: 'Check dues' },
       { label: 'Alerts', href: '/modules/alerts', icon: Bell, description: 'View current alerts' },
     ],
+    Staff: [
+      { label: 'Student Lookup', href: '/modules/students', icon: GraduationCap, description: 'Open read-only student records' },
+      { label: 'Library', href: '/modules/library', icon: Library, description: 'Manage library inventory' },
+      { label: 'Fee Desk', href: '/modules/fees', icon: IndianRupee, description: 'Review fee records' },
+      { label: 'Support', href: '/modules/help', icon: CircleHelp, description: 'Manage support tickets' },
+    ],
   }
   return actions[role] || actions.Student
 }
 
-export function getMobileNavigation(role: string): NavItem[] {
-  if (role === 'Super Admin') return ADMIN_NAV.slice(0, 4).concat(byHref(['/modules/profile']))
-  if (role === 'Faculty') return byHref(['/dashboard', '/modules/my-classes', '/modules/attendance', '/modules/marks', '/modules/profile'])
-  if (role === 'Student') return byHref(['/dashboard', '/modules/attendance', '/modules/assignments', '/modules/marks', '/modules/profile'])
-  if (role === 'Parent') return byHref(['/dashboard', '/modules/attendance', '/modules/fees', '/modules/alerts', '/modules/profile'])
-  return byHref(['/dashboard', '/modules/students', '/modules/attendance', '/modules/notices', '/modules/profile'])
+export function getMobileNavigation(role: string, allowedHrefs?: string[]): NavItem[] {
+  const navigation = getWorkspaceNavigation(role, allowedHrefs)
+  const preferred: Record<string, string[]> = {
+    'Super Admin': ['/admin', '/admin/colleges', '/admin/users', '/admin/analytics', '/modules/profile'],
+    'College Admin': ['/dashboard', '/modules/academics', '/modules/students', '/modules/alerts', '/modules/profile'],
+    Faculty: ['/dashboard', '/modules/my-classes', '/modules/attendance', '/modules/marks', '/modules/profile'],
+    Student: ['/dashboard', '/modules/academics', '/modules/assignments', '/modules/alerts', '/modules/profile'],
+    Parent: ['/dashboard', '/modules/attendance', '/modules/fees', '/modules/alerts', '/modules/profile'],
+    Staff: ['/dashboard', '/modules/students', '/modules/library', '/modules/help', '/modules/profile'],
+  }
+  const wanted = preferred[role] ?? ['/dashboard', '/modules/profile']
+  return wanted.map((href) => navigation.find((item) => item.href === href)).filter(Boolean) as NavItem[]
 }
 
 export const GLOBAL_ELEMENTS = [
@@ -155,4 +198,5 @@ export const GLOBAL_ELEMENTS = [
   'User profile menu',
   'Role-aware navigation',
   'Role-based quick actions',
+  'Persistent local demo data',
 ]
