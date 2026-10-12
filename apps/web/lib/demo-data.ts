@@ -124,3 +124,91 @@ export const DEMO_FEES: FeeRecord[] = [
   { id: 'fee-9', studentId: '9', feeType: 'Exam Fee', amount: 5000, dueDate: '2026-11-05', status: 'upcoming' },
   { id: 'fee-10', studentId: '10', feeType: 'Tuition Fee', amount: 45000, dueDate: '2026-10-15', status: 'pending' },
 ]
+
+
+export type ExamRecord = {
+  id: string
+  name: string
+  course: string
+  code: string
+  date: string
+  startTime: string
+  endTime: string
+  maxMarks: number
+  type: 'midterm' | 'final' | 'quiz' | 'practical'
+  status: 'draft' | 'upcoming' | 'ongoing' | 'completed'
+  students: number
+  venue: string
+}
+
+export type FacultyRecord = {
+  id: string
+  name: string
+  empId: string
+  department: string
+  designation: string
+  email: string
+  phone: string
+  courses: number
+  students: number
+  experience: string
+  qualification: string
+  status: 'active' | 'inactive'
+}
+
+export type LibraryBookRecord = {
+  id: string
+  title: string
+  author: string
+  isbn: string
+  category: string
+  total: number
+  available: number
+  location: string
+}
+
+export type MarkRecord = {
+  id: string
+  studentId: string
+  course: string
+  internal: number
+  external: number
+}
+
+export const DEMO_EXAMS: ExamRecord[] = [
+  { id: 'exam-1', name: 'Internal Assessment II', course: 'Artificial Intelligence', code: 'AIML-501', date: '2026-10-19', startTime: '09:30', endTime: '11:30', maxMarks: 50, type: 'midterm', status: 'upcoming', students: 42, venue: 'Hall A' },
+  { id: 'exam-2', name: 'Database Quiz', course: 'Database Systems', code: 'CSE-302', date: '2026-10-16', startTime: '11:00', endTime: '12:00', maxMarks: 20, type: 'quiz', status: 'upcoming', students: 40, venue: 'Lab 2' },
+  { id: 'exam-3', name: 'Machine Learning Practical', course: 'Machine Learning', code: 'AIML-502', date: '2026-10-24', startTime: '13:30', endTime: '16:30', maxMarks: 50, type: 'practical', status: 'draft', students: 42, venue: 'AI Lab' },
+  { id: 'exam-4', name: 'Operating Systems Final', course: 'Operating Systems', code: 'CSE-303', date: '2026-11-28', startTime: '09:30', endTime: '12:30', maxMarks: 100, type: 'final', status: 'upcoming', students: 40, venue: 'Hall B' },
+  { id: 'exam-5', name: 'AI Weekly Quiz', course: 'Artificial Intelligence', code: 'AIML-501', date: '2026-10-08', startTime: '10:00', endTime: '10:45', maxMarks: 20, type: 'quiz', status: 'completed', students: 42, venue: 'Room 204' },
+]
+
+export const DEMO_FACULTY: FacultyRecord[] = [
+  { id: 'fac-1', name: 'Dr. Meera Patel', empId: 'FAC001', department: 'AIML', designation: 'Professor', email: 'meera.p@eduone.demo', phone: '+91 98765 10001', courses: 3, students: 126, experience: '12 yrs', qualification: 'Ph.D - IIT Madras', status: 'active' },
+  { id: 'fac-2', name: 'Dr. S. Ramesh', empId: 'FAC002', department: 'CSE', designation: 'Associate Professor', email: 'ramesh.s@eduone.demo', phone: '+91 98765 10002', courses: 2, students: 82, experience: '8 yrs', qualification: 'Ph.D - NIT Trichy', status: 'active' },
+  { id: 'fac-3', name: 'Prof. Anjali Desai', empId: 'FAC003', department: 'Data Science', designation: 'Assistant Professor', email: 'anjali.d@eduone.demo', phone: '+91 98765 10003', courses: 4, students: 148, experience: '6 yrs', qualification: 'M.Tech - IIT Bombay', status: 'active' },
+  { id: 'fac-4', name: 'Dr. K. Venkatesh', empId: 'FAC004', department: 'CSE', designation: 'Head of Department', email: 'venkatesh.k@eduone.demo', phone: '+91 98765 10004', courses: 2, students: 80, experience: '15 yrs', qualification: 'Ph.D - IISc Bengaluru', status: 'active' },
+  { id: 'fac-5', name: 'Prof. Neha Gupta', empId: 'FAC005', department: 'ECE', designation: 'Assistant Professor', email: 'neha.g@eduone.demo', phone: '+91 98765 10005', courses: 3, students: 96, experience: '4 yrs', qualification: 'M.Tech - Anna University', status: 'inactive' },
+]
+
+export const DEMO_BOOKS: LibraryBookRecord[] = [
+  { id: 'book-1', title: 'Introduction to Algorithms', author: 'Thomas H. Cormen', isbn: '9780262046305', category: 'Computer Science', total: 10, available: 7, location: 'CS-A3' },
+  { id: 'book-2', title: 'Pattern Recognition and Machine Learning', author: 'Christopher Bishop', isbn: '9780387310732', category: 'AI / ML', total: 8, available: 5, location: 'AI-B2' },
+  { id: 'book-3', title: 'Database System Concepts', author: 'Abraham Silberschatz', isbn: '9780078022159', category: 'Computer Science', total: 8, available: 4, location: 'CS-B4' },
+  { id: 'book-4', title: 'Deep Learning', author: 'Ian Goodfellow', isbn: '9780262035613', category: 'AI / ML', total: 6, available: 2, location: 'AI-C1' },
+  { id: 'book-5', title: 'Operating System Concepts', author: 'Abraham Silberschatz', isbn: '9781119800361', category: 'Computer Science', total: 12, available: 9, location: 'CS-A5' },
+  { id: 'book-6', title: 'Engineering Mathematics', author: 'B.S. Grewal', isbn: '9788193328491', category: 'Mathematics', total: 15, available: 11, location: 'MA-C1' },
+]
+
+export const DEMO_MARKS: MarkRecord[] = [
+  { id: 'mark-1', studentId: '1', course: 'Artificial Intelligence', internal: 44, external: 41 },
+  { id: 'mark-2', studentId: '2', course: 'Artificial Intelligence', internal: 47, external: 45 },
+  { id: 'mark-3', studentId: '3', course: 'Artificial Intelligence', internal: 34, external: 31 },
+  { id: 'mark-4', studentId: '4', course: 'Artificial Intelligence', internal: 41, external: 39 },
+  { id: 'mark-5', studentId: '5', course: 'Artificial Intelligence', internal: 24, external: 22 },
+  { id: 'mark-6', studentId: '6', course: 'Artificial Intelligence', internal: 40, external: 42 },
+  { id: 'mark-7', studentId: '7', course: 'Artificial Intelligence', internal: 43, external: 44 },
+  { id: 'mark-8', studentId: '8', course: 'Artificial Intelligence', internal: 37, external: 35 },
+  { id: 'mark-9', studentId: '9', course: 'Artificial Intelligence', internal: 31, external: 30 },
+  { id: 'mark-10', studentId: '10', course: 'Artificial Intelligence', internal: 28, external: 26 },
+]
