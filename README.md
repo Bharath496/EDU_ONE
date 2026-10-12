@@ -1,155 +1,265 @@
 # EDU_ONE
 
-EDU_ONE is a **portfolio-grade college operating system demo** built with Next.js, TypeScript, Zustand and FastAPI.
+EDU_ONE is a **portfolio-grade, multi-role college operating system demo** built with Next.js, TypeScript, Zustand and FastAPI.
 
-It is deliberately designed to be useful at **zero required service cost** for a portfolio/demo environment. Core frontend workflows persist in the browser, while the repository also includes a functional in-memory FastAPI backend that mirrors the main domains.
+The hosted frontend is designed to work at **₹0 required service cost** using GitHub Pages, static export and browser-persisted data. The repository also contains a tested FastAPI backend for local/API demonstration.
 
-> EDU_ONE is not presented as a production student-information system. Real institutional deployment would require production authentication, a persistent database, tenant isolation, audit logs, privacy controls, backups, secure file storage and payment-provider integration.
+> EDU_ONE is a serious portfolio system, not a claim that a production student-information platform can safely run from browser storage. A real institutional deployment would need server-side identity, durable storage, tenant isolation, audit logs, privacy controls, secure files, backups, observability and payment-provider integration.
 
-## What is now functional
+## Live website
 
-### Connected college workspace
+GitHub Pages:
 
-The main app uses one persistent local data layer, so modules are no longer isolated static mockups.
+```text
+https://bharath496.github.io/EDU_ONE/
+```
 
-- **Dashboard**
-  - live student, attendance, fee and risk metrics
-  - department snapshot
-  - current priorities
-  - role-based quick actions
-  - workspace activity log
+Repository:
 
-- **Students**
-  - create, edit and remove students
-  - search and department/status filters
-  - active/inactive status control
-  - CSV export
+```text
+https://github.com/Bharath496/EDU_ONE
+```
 
-- **Attendance**
-  - course and date based sessions
-  - present / absent / late / excused states
-  - bulk marking
-  - persistent sessions
-  - automatic recalculation of student attendance
-  - CSV export
+No Vercel deployment is required.
 
-- **Assignments**
-  - create assignments
-  - draft / published / closed states
-  - submission-progress display
-  - persistent filters
+## Demo roles
 
-- **Exams**
-  - schedule exams
-  - assessment type and status
-  - venue, date, time, marks and class strength
-
-- **Marks & Grades**
-  - editable internal and external marks
-  - live total, grade and pass/fail calculation
-  - search, course filters and CSV export
-
-- **Fees**
-  - fee ledger and status filters
-  - collected / pending / overdue metrics
-  - demo payment completion
-  - CSV export
-
-- **Library**
-  - persistent book catalog
-  - add books
-  - inventory availability
-  - issue-copy simulation
-  - CSV export
-
-- **Notices**
-  - publish announcements
-  - priority and audience controls
-  - pin / unpin
-  - filters and search
-
-- **Alerts**
-  - generated from current students, fees, notices and exams
-  - read/unread state
-  - severity filters
-  - mark-all-read
-
-- **Student Intelligence**
-  - explainable High / Medium / Low academic-risk classification
-  - uses live CGPA, attendance and record status
-  - department watchlist
-  - risk filtering and CSV export
-  - no paid AI API required
-
-- **Reports**
-  - real CSV generation from current workspace data
-  - student, attendance, fee, assignment and notice exports
-
-- **Profile & Settings**
-  - editable demo profile
-  - local notification preferences
-  - JSON workspace backup and restore
-  - reset demo workspace
-
-### Super-admin demo
-
-Super Admin has a separate persistent platform-demo data store.
-
-- fictional tenant institution management
-- add / activate / pause demo tenants
-- platform-user management
-- illustrative plan ledger
-- analytics calculated from the demo store
-- platform settings and reset controls
-
-All institution/customer records in the Super Admin area are explicitly fictional demo data.
-
-## Demo access
-
-Open the app and choose a role:
+EDU_ONE now supports the full role set used by the product design:
 
 - Super Admin
 - College Admin
 - Faculty
 - Student
 - Parent
+- Staff
 
-The landing page uses **explicit demo authentication**. It does not pretend that Google/Microsoft SSO or production identity infrastructure is configured.
+You can enter immediately from the landing page or use the guided demo flow:
+
+1. Select a fictional institution
+2. Select a role
+3. Enter the displayed local demo verification code
+4. Continue to the role-based dashboard
+
+The flow deliberately does **not** pretend that real SSO, SMS or production identity infrastructure is configured.
+
+## Extended application
+
+### Dashboard
+
+The dashboard changes by role rather than showing every user the same administrative data.
+
+- Super Admin sees platform-demo tenants, users and administration links
+- College Admin sees institution operations and risk signals
+- Faculty sees teaching, attendance, coursework and assessment priorities
+- Student sees their own attendance, CGPA, assignments, fees, exams and notices
+- Parent gets a student-monitoring view
+- Staff gets operational workflows
+
+### Academics
+
+- persistent course catalog
+- subjects and credits
+- semester and department metadata
+- faculty assignment
+- weekly timetable
+- room and class-time information
+- College Admin course creation and activation controls
+
+### Students
+
+- create, edit and remove records
+- search and filters
+- status control
+- CSV export
+- role-aware mutation controls
+
+### Faculty
+
+- persistent faculty directory
+- department, designation and qualification data
+- workload information
+- add faculty
+- CSV export
+
+### Attendance
+
+- course/date sessions
+- Present / Absent / Late / Excused
+- bulk marking
+- persistent session history
+- automatic student attendance recalculation
+- CSV export
+- Student/Parent scoped read-only views
+
+### Assignments
+
+- create assignments
+- Draft / Published / Closed workflow
+- class submission progress
+- student-scoped demo submission
+- persistent submission state
+
+### Exams
+
+- exam scheduling
+- assessment type and status
+- date/time/venue
+- maximum marks and class strength
+- learner views hide draft exams
+
+### Marks & Grades
+
+- internal + external marks
+- automatic total
+- automatic grade
+- pass/fail status
+- course filters and CSV export
+- Student/Parent read-only scoped grades
+
+### Fees
+
+- fee ledger
+- Paid / Pending / Upcoming / Overdue states
+- collection metrics
+- demo payment completion
+- Student/Parent scoped fee view
+- CSV export
+
+### Library
+
+- persistent book catalog
+- categories, ISBN and shelf location
+- total/available copy tracking
+- issue-copy simulation
+- learner availability view
+- CSV export
+
+### Communication
+
+- local persistent inbox
+- compose messages
+- recipient selection
+- mark read
+- announcements
+- contacts
+- role-aware visibility
+
+### Notices & Alerts
+
+- publish notices
+- audience and priority
+- pin/unpin
+- cross-module alert generation
+- read/unread state
+- Student/Parent scoped alerts
+
+### Student Intelligence
+
+- explainable High / Medium / Low risk classification
+- attendance + CGPA + record-state thresholds
+- department watchlist
+- CSV export
+- no paid AI API
+
+### Reports
+
+Real browser-generated CSV exports for:
+
+- Students
+- Attendance
+- Fees
+- Assignments
+- Notices
+- Exams
+- Marks
+- Faculty
+- Library
+
+Financial reporting is role-restricted.
+
+### Profile, Settings & Support
+
+- editable demo profile
+- local notification preferences
+- JSON workspace backup/restore for administrators
+- workspace reset
+- searchable FAQs
+- persistent support tickets
+- Staff/College Admin ticket-status management
+
+## Super Admin
+
+Super Admin uses a separate persistent platform-demo store.
+
+- fictional tenant management
+- add, activate and pause institutions
+- cross-tenant demo users
+- Staff accounts
+- illustrative plan ledger
+- platform analytics calculated from current demo data
+- platform settings
+- **Roles & Permissions matrix**
+
+The permission matrix controls module visibility for:
+
+- College Admin
+- Faculty
+- Student
+- Parent
+- Staff
+
+Permission changes immediately affect the route guard, sidebar, command palette and mobile navigation.
+
+## Mobile, installability and offline behavior
+
+The web app includes:
+
+- responsive desktop/tablet/mobile layouts
+- role-aware mobile bottom navigation
+- collapsible desktop sidebar
+- command palette with Ctrl/Cmd + K
+- installable web-app manifest
+- service worker
+- same-origin cache fallback for previously visited resources
+
+The service worker is a portfolio offline layer, not a replacement for production synchronization or conflict handling.
 
 ## FastAPI backend
 
-The API lives in `apps/api/main.py`.
+The API lives in:
 
-Implemented demo endpoints include:
+```text
+apps/api/main.py
+```
 
-- `/health`
-- `/auth/login`
-- `/auth/refresh`
-- `/auth/logout`
-- `/auth/me`
-- `/dashboard/stats`
-- `/students` CRUD
-- `/faculty`
-- `/attendance`
-- `/attendance/bulk`
-- `/exams`
-- `/assignments`
-- assignment submission
-- `/fees`
-- fee payment simulation
-- `/notices`
-- `/library/books`
-- library issue / return
-- `/reports`
-- admin colleges / users / analytics
-- settings
-- explainable risk analytics
+Current demo API version: **0.5.0**
 
-The API is intentionally **in-memory** for this portfolio build. Restarting it resets server-side demo mutations.
+Implemented API areas include:
 
-## Tech stack
+- health
+- demo authentication and refresh
+- Students CRUD
+- Faculty
+- Academics / courses CRUD
+- Attendance + bulk attendance
+- Exams
+- Assignments + submissions
+- Fees + payment simulation
+- Communication messages + read state
+- Notices
+- Library issue/return
+- Support tickets
+- Reports
+- Super Admin colleges/users/analytics
+- Settings
+- explainable student-risk analytics
+
+The API is intentionally **in-memory**. Restarting it resets API-side mutations.
+
+## Technology
 
 ### Web
+
 - Next.js 14
 - React 18
 - TypeScript
@@ -159,22 +269,24 @@ The API is intentionally **in-memory** for this portfolio build. Restarting it r
 - Lucide React
 
 ### API
+
 - FastAPI
 - Pydantic
-- Pytest
 - Uvicorn
+- Pytest
 
-### Quality
+### Engineering
+
 - GitHub Actions
 - TypeScript typecheck
-- Next.js production build
+- production static build
 - API smoke tests
+- GitHub Pages deployment
+- PWA manifest + service worker
 
 ## Run locally
 
-### 1. Web app
-
-From the repository root:
+### Frontend
 
 ```bash
 npm --prefix apps/web install
@@ -187,9 +299,7 @@ Open:
 http://localhost:3000
 ```
 
-### 2. FastAPI demo
-
-Create a Python environment, then:
+### API
 
 ```bash
 pip install -r apps/api/requirements.txt
@@ -202,13 +312,13 @@ API docs:
 http://localhost:8000/docs
 ```
 
-Optional web API configuration:
+Optional API configuration:
 
 ```text
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
-## Validate the project
+## Validate
 
 ```bash
 npm --prefix apps/web install
@@ -218,19 +328,27 @@ pip install -r apps/api/requirements.txt
 npm run test:api
 ```
 
-The repository also runs these checks automatically through GitHub Actions.
+GitHub Actions runs these checks automatically.
 
 ## GitHub Pages deployment
 
-The live portfolio website is deployed directly from this repository with GitHub Actions and GitHub Pages.
+The frontend is exported as static files.
+
+The GitHub Pages workflow:
 
 ```text
-https://bharath496.github.io/EDU_ONE/
+.github/workflows/deploy-pages.yml
 ```
 
-The Next.js frontend uses static export, the repository base path `/EDU_ONE`, and browser-persisted demo data. That means the hosted portfolio does not require Vercel, a paid database, or a backend server for its main interactive workflows.
+builds `apps/web`, uploads `apps/web/out`, and deploys it with GitHub Pages.
 
-The optional FastAPI project remains in `apps/api` for backend/API demonstration and local development. It can be deployed separately later if a persistent hosted API is needed.
+The app automatically uses the repository base path:
+
+```text
+/EDU_ONE
+```
+
+when running in GitHub Actions.
 
 ## Project structure
 
@@ -238,7 +356,8 @@ The optional FastAPI project remains in `apps/api` for backend/API demonstration
 EDU_ONE/
 ├── .github/
 │   └── workflows/
-│       └── web-ci.yml
+│       ├── web-ci.yml
+│       └── deploy-pages.yml
 ├── apps/
 │   ├── api/
 │   │   ├── main.py
@@ -247,35 +366,37 @@ EDU_ONE/
 │   └── web/
 │       ├── app/
 │       │   ├── admin/
+│       │   ├── auth/
 │       │   ├── dashboard/
 │       │   └── modules/
 │       ├── components/
-│       └── lib/
-│           ├── auth-store.ts
-│           ├── demo-data.ts
-│           ├── edu-store.ts
-│           ├── platform-store.ts
-│           └── api.ts
+│       ├── lib/
+│       └── public/
+│           ├── icon.svg
+│           ├── manifest.webmanifest
+│           └── sw.js
 ├── package.json
 └── LICENSE
 ```
 
 ## Production boundary
 
-Before using EDU_ONE with real institutional data, at minimum add:
+Before real institutional use, at minimum add:
 
 1. server-side authentication and authorization
-2. real database persistence with migrations
+2. durable relational database and migrations
 3. strict tenant isolation
-4. audit logging
-5. encrypted secret management
-6. secure document/file storage
-7. rate limiting and abuse controls
-8. payment-provider integration and webhooks
-9. privacy, retention and consent policies
-10. automated backups and disaster recovery
-11. observability and error monitoring
-12. security review and penetration testing
+4. authorization checks on every data mutation
+5. audit logs
+6. encrypted secret management
+7. secure document/file storage
+8. rate limiting
+9. payment-provider webhooks and reconciliation
+10. privacy, consent and retention policies
+11. backups and disaster recovery
+12. observability and incident response
+13. accessibility audit
+14. security review and penetration testing
 
 ## License
 
