@@ -120,6 +120,73 @@ class ApiClient {
     return response.data
   }
 
+  async getCourses(params?: { department?: string; semester?: number; status?: string }) {
+    const response = await this.client.get('/academics/courses', { params })
+    return response.data
+  }
+
+  async createCourse(data: {
+    code: string
+    name: string
+    credits: number
+    department: string
+    semester: number
+    faculty_id?: string
+    day: string
+    start_time: string
+    end_time: string
+    room: string
+    status: 'active' | 'inactive'
+  }) {
+    const response = await this.client.post('/academics/courses', data)
+    return response.data
+  }
+
+  async getMessages(recipient?: string) {
+    const response = await this.client.get('/communication/messages', {
+      params: recipient ? { recipient } : undefined,
+    })
+    return response.data
+  }
+
+  async sendMessage(data: {
+    sender: string
+    sender_role: string
+    recipient: string
+    subject: string
+    body: string
+  }) {
+    const response = await this.client.post('/communication/messages', data)
+    return response.data
+  }
+
+  async markMessageRead(id: string) {
+    const response = await this.client.post(`/communication/messages/${id}/read`)
+    return response.data
+  }
+
+  async getSupportTickets(createdBy?: string) {
+    const response = await this.client.get('/support/tickets', {
+      params: createdBy ? { createdBy } : undefined,
+    })
+    return response.data
+  }
+
+  async createSupportTicket(data: {
+    title: string
+    category: string
+    created_by: string
+    priority: 'low' | 'medium' | 'high'
+  }) {
+    const response = await this.client.post('/support/tickets', data)
+    return response.data
+  }
+
+  async updateSupportTicket(id: string, status: 'open' | 'in-progress' | 'resolved') {
+    const response = await this.client.put(`/support/tickets/${id}`, { status })
+    return response.data
+  }
+
   async getStudents(params?: { page?: number; limit?: number; search?: string }) {
     const response = await this.client.get('/students', { params })
     return response.data
