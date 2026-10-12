@@ -5,18 +5,30 @@ import { useRouter } from 'next/navigation'
 import {
   BarChart3,
   Download,
+  BookOpen,
+  ClipboardList,
   FileSpreadsheet,
   GraduationCap,
   IndianRupee,
   Megaphone,
   UserCheck,
+  Users,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { useAuthStore } from '@/lib/auth-store'
 import { useEduStore } from '@/lib/edu-store'
 
-type ReportType = 'students' | 'attendance' | 'fees' | 'assignments' | 'notices'
+type ReportType =
+  | 'students'
+  | 'attendance'
+  | 'fees'
+  | 'assignments'
+  | 'notices'
+  | 'exams'
+  | 'marks'
+  | 'faculty'
+  | 'library'
 
 function saveCsv(filename: string, rows: Array<Array<string | number>>) {
   const csv = rows
@@ -39,6 +51,10 @@ export default function ReportsPage() {
   const fees = useEduStore((state) => state.fees)
   const assignments = useEduStore((state) => state.assignments)
   const notices = useEduStore((state) => state.notices)
+  const exams = useEduStore((state) => state.exams)
+  const marks = useEduStore((state) => state.marks)
+  const faculty = useEduStore((state) => state.faculty)
+  const books = useEduStore((state) => state.books)
 
   const [generated, setGenerated] = useState<string | null>(null)
 
@@ -83,7 +99,35 @@ export default function ReportsPage() {
       icon: Megaphone,
       count: notices.length,
     },
-  ], [assignments.length, attendance.length, fees.length, notices.length, students.length])
+    {
+      id: 'exams' as ReportType,
+      title: 'Exam Schedule',
+      description: 'Assessment type, dates, venues, marks and current status.',
+      icon: ClipboardList,
+      count: exams.length,
+    },
+    {
+      id: 'marks' as ReportType,
+      title: 'Marks & Grades',
+      description: 'Internal, external and calculated total marks by student.',
+      icon: FileSpreadsheet,
+      count: marks.length,
+    },
+    {
+      id: 'faculty' as ReportType,
+      title: 'Faculty Directory',
+      description: 'Department, designation, workload and qualification records.',
+      icon: Users,
+      count: faculty.length,
+    },
+    {
+      id: 'library' as ReportType,
+      title: 'Library Inventory',
+      description: 'Catalog availability, categories, locations and copy counts.',
+      icon: BookOpen,
+      count: books.length,
+    },
+  ], [assignments.length, attendance.length, books.length, exams.length, faculty.length, fees.length, marks.length, notices.length, students.length])
 
   const generate = (type: ReportType) => {
     if (type === 'students') {
@@ -125,6 +169,76 @@ export default function ReportsPage() {
       saveCsv('eduone-notices-report.csv', [
         ['Title', 'Author', 'Audience', 'Priority', 'Published At', 'Pinned', 'Views'],
         ...notices.map((item) => [item.title, item.author, item.target, item.priority, item.publishedAt, item.pinned ? 'Yes' : 'No', item.views]),
+      ])
+    }
+
+    if (type === 'exams') {
+      saveCsv('eduone-exams-report.csv', [
+        ['Exam', 'Course', 'Code', 'Date', 'Start', 'End', 'Marks', 'Type', 'Status', 'Students', 'Venue'],
+        ...exams.map((item) => [
+          item.name,
+          item.course,
+          item.code,
+          item.date,
+          item.startTime,
+          item.endTime,
+          item.maxMarks,
+          item.type,
+          item.status,
+          item.students,
+          item.venue,
+        ]),
+      ])
+    }
+
+    if (type === 'marks') {
+      saveCsv('eduone-marks-report.csv', [
+        ['Register No', 'Student', 'Course', 'Internal', 'External', 'Total'],
+        ...marks.map((item) => {
+          const student = students.find((row) => row.id === item.studentId)
+          return [
+            student?.regNo ?? item.studentId,
+            student?.name ?? 'Unknown',
+            item.course,
+            item.internal,
+            item.external,
+            item.internal + item.external,
+          ]
+        }),
+      ])
+    }
+
+    if (type === 'faculty') {
+      saveCsv('eduone-faculty-report.csv', [
+        ['Employee ID', 'Name', 'Department', 'Designation', 'Email', 'Phone', 'Courses', 'Students', 'Experience', 'Qualification', 'Status'],
+        ...faculty.map((item) => [
+          item.empId,
+          item.name,
+          item.department,
+          item.designation,
+          item.email,
+          item.phone,
+          item.courses,
+          item.students,
+          item.experience,
+          item.qualification,
+          item.status,
+        ]),
+      ])
+    }
+
+    if (type === 'library') {
+      saveCsv('eduone-library-report.csv', [
+        ['Title', 'Author', 'ISBN', 'Category', 'Total', 'Available', 'Location'],
+        ...books.map((item) => [
+          item.title,
+          item.author,
+          item.isbn,
+          item.category,
+          item.total,
+          item.available,
+          item.location,
+        ]),
       ])
     }
 
