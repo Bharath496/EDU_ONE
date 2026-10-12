@@ -63,11 +63,6 @@ export default function FeesPage() {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('All')
 
-  if (!isAuthenticated || !user) {
-    router.push('/login')
-    return null
-  }
-
   const enriched = fees.map((fee) => {
     const student = students.find((item) => item.id === fee.studentId)
     return {
@@ -94,6 +89,11 @@ export default function FeesPage() {
   const pending = fees.filter((item) => item.status === 'pending' || item.status === 'overdue').reduce((sum, item) => sum + item.amount, 0)
   const overdue = fees.filter((item) => item.status === 'overdue').length
   const collectionRate = fees.length ? Math.round((fees.filter((item) => item.status === 'paid').length / fees.length) * 100) : 0
+
+  if (!isAuthenticated || !user) {
+    router.push('/login')
+    return null
+  }
 
   return (
     <div className="space-y-6 p-4 lg:p-6">
