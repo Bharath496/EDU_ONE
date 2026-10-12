@@ -1,237 +1,314 @@
 'use client'
 
-import { useState } from 'react'
+import { ChangeEvent, FormEvent, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
-import { Avatar } from '@/components/ui/Avatar'
-import { useAuthStore } from '@/lib/auth-store'
-import { Badge } from '@/components/ui/Badge'
 import {
-  User, Settings, ChevronRight, Save, Bell, Shield, Palette, Globe, LogOut, Mail, Phone, Key, RefreshCw, Moon, Sun, Monitor
+  Bell,
+  Database,
+  Download,
+  LogOut,
+  RefreshCcw,
+  Save,
+  ShieldCheck,
+  Upload,
+  User,
 } from 'lucide-react'
+import { Avatar } from '@/components/ui/Avatar'
+import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Input } from '@/components/ui/Input'
+import { useAuthStore } from '@/lib/auth-store'
+import { useEduStore, type WorkspaceSnapshot } from '@/lib/edu-store'
 
-export default function UserSettingsPage() {
-  const { user, isAuthenticated, clearAuth } = useAuthStore()
+type NotificationPrefs = {
+  email: boolean
+  browser: boolean
+  attendance: boolean
+  fees: boolean
+  notices: boolean
+}
+
+const defaultPrefs: NotificationPrefs = {
+  email: true,
+  browser: true,
+  attendance: true,
+  fees: true,
+  notices: true,
+}
+
+export default function SettingsPage() {
+  const { user, isAuthenticated, setUser, clearAuth } = useAuthStore()
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState('profile')
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
+  const resetDemo = useEduStore((state) => state.resetDemo)
+  const restoreSnapshot = useEduStore((state) => state.restoreSnapshot)
+  const students = useEduStore((state) => state.students)
+  const attendanceSessions = useEduStore((state) => state.attendanceSessions)
+  const assignments = useEduStore((state) => state.assignments)
+  const notices = useEduStore((state) => state.notices)
+  const fees = useEduStore((state) => state.fees)
 
-  if (!isAuthenticated || !user) { router.push('/login'); return null }
+  const [tab, setTab] = useState<'account' | 'notifications' | 'workspace'>('account')
+  const [name, setName] = useState(user?.name ?? '')
+  const [department, setDepartment] = useState(user?.department ?? '')
+  const [prefs, setPrefs] = useState<NotificationPrefs>(defaultPrefs)
+  const [message, setMessage] = useState('')
 
-  const handleSave = () => {
-    setSaving(true)
-    setTimeout(() => { setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 3000) }, 1000)
+  useEffect(() => {
+    const raw = localStorage.getItem('eduone-notification-prefs')
+    if (!raw) return
+    try {
+      setPrefs({ ...defaultPrefs, ...JSON.parse(raw) })
+    } catch {
+      setPrefs(defaultPrefs)
+    }
+  }, [])
+
+  if (!isAuthenticated || !user) {
+    router.push('/login')
+    return null
+  }
+
+  const flash = (text: string) => {
+    setMessage(text)
+    window.setTimeout(() => setMessage(''), 2500)
+  }
+
+  const saveAccount = (event: FormEvent) => {
+    event.preventDefault()
+    setUser({
+      ...user,
+      name: name.trim() || user.name,
+      department: department.trim() || undefined,
+    })
+    flash('Account details saved.')
+  }
+
+  const savePrefs = () => {
+    localStorage.setItem('eduone-notification-prefs', JSON.stringify(prefs))
+    flash('Notification preferences saved.')
+  }
+
+  const exportSnapshot = () => {
+    const payload: WorkspaceSnapshot = {
+      students,
+      attendanceSessions,
+      assignments,
+      notices,
+      fees,
+    }
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `eduone-workspace-${new Date().toISOString().slice(0, 10)}.json`
+    anchor.click()
+    URL.revokeObjectURL(url)
+    flash('Workspace backup downloaded.')
+  }
+
+  const importSnapshot = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    try {
+      const parsed = JSON.parse(await file.text()) as Partial<WorkspaceSnapshot>
+      if (
+        !Array.isArray(parsed.students) ||
+        !Array.isArray(parsed.attendanceSessions) ||
+        !Array.isArray(parsed.assignments) ||
+        !Array.isArray(parsed.notices) ||
+        !Array.isArray(parsed.fees)
+      ) {
+        throw new Error('Invalid EDU_ONE snapshot')
+      }
+      restoreSnapshot(parsed as WorkspaceSnapshot)
+      flash('Workspace restored from backup.')
+    } catch {
+      flash('Could not import that backup file.')
+    } finally {
+      event.target.value = ''
+    }
+  }
+
+  const resetWorkspace = () => {
+    if (window.confirm('Reset all EDU_ONE demo data in this browser to the default workspace?')) {
+      resetDemo()
+      flash('Demo workspace reset.')
+    }
   }
 
   const tabs = [
-    { id: 'profile', label: 'Profile', icon: User },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'appearance', label: 'Appearance', icon: Palette },
-    { id: 'security', label: 'Security', icon: Shield },
+    { id: 'account' as const, label: 'Account', icon: User },
+    { id: 'notifications' as const, label: 'Notifications', icon: Bell },
+    { id: 'workspace' as const, label: 'Workspace', icon: Database },
   ]
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-slate-200">
-        <div className="flex h-16 items-center justify-between px-4 lg:px-6">
-          <div>
-            <p className="text-sm text-slate-500">{user.collegeName}</p>
-            <h1 className="text-xl font-bold text-slate-900">Settings</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" className="gap-2 text-red-600 border-red-200 hover:bg-red-50" onClick={() => { clearAuth(); router.push('/login') }}>
-              <LogOut className="w-4 h-4" /> Sign Out
-            </Button>
-            <Button variant="primary" size="sm" className="gap-2" onClick={handleSave} loading={saving}>
-              {saved ? <><RefreshCw className="w-4 h-4" /> Saved</> : <><Save className="w-4 h-4" /> Save</>}
-            </Button>
-          </div>
+    <div className="mx-auto max-w-5xl space-y-6 p-4 lg:p-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-sm font-medium text-primary-600">{user.collegeName}</p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">Settings</h1>
+          <p className="mt-1 text-sm text-slate-500">Account preferences and zero-cost workspace controls.</p>
         </div>
-      </header>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-2 border-red-200 text-red-700 hover:bg-red-50"
+          onClick={() => {
+            clearAuth()
+            router.push('/login')
+          }}
+        >
+          <LogOut className="h-4 w-4" />
+          Sign out
+        </Button>
+      </div>
 
-      <div className="p-4 lg:p-6 max-w-4xl mx-auto">
-        <div className="flex items-center gap-6 mb-6 p-4 rounded-xl bg-white border border-slate-200">
+      {message && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+          {message}
+        </div>
+      )}
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-4">
+        <div className="flex items-center gap-4">
           <Avatar name={user.name} size="lg" />
           <div>
-            <h2 className="text-lg font-bold text-slate-900">{user.name}</h2>
-            <p className="text-sm text-slate-500">{user.email} • {user.role}</p>
-            <p className="text-sm text-slate-400">{user.collegeName}{user.department ? ` • ${user.department}` : ''}</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-lg font-bold text-slate-950">{user.name}</h2>
+              <Badge variant="primary">{user.role}</Badge>
+            </div>
+            <p className="mt-1 text-sm text-slate-500">{user.email}</p>
           </div>
         </div>
+      </div>
 
-        <div className="flex gap-2 mb-6 overflow-x-auto">
-          {tabs.map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors whitespace-nowrap ${activeTab === tab.id ? 'bg-primary-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
-              <tab.icon className="w-4 h-4" />{tab.label}
-            </button>
-          ))}
-        </div>
+      <div className="flex gap-2 overflow-x-auto">
+        {tabs.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => setTab(item.id)}
+            className={`flex items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-medium transition-colors ${
+              tab === item.id
+                ? 'bg-primary-600 text-white'
+                : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <item.icon className="h-4 w-4" />
+            {item.label}
+          </button>
+        ))}
+      </div>
 
-        {activeTab === 'profile' && (
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Profile Information</CardTitle>
-              <CardDescription>Update your personal details</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input label="Full Name" defaultValue={user.name} />
-                <Input label="Email" defaultValue={user.email} type="email" />
+      {tab === 'account' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Account profile</CardTitle>
+            <CardDescription>These values are stored with the demo session.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={saveAccount} className="grid gap-4 md:grid-cols-2">
+              <Input label="Full name" value={name} onChange={(event) => setName(event.target.value)} />
+              <Input label="Email" value={user.email} disabled />
+              <Input label="Role" value={user.role} disabled />
+              <Input label="Department" value={department} onChange={(event) => setDepartment(event.target.value)} placeholder="e.g. AIML" />
+              <div className="md:col-span-2">
+                <Button type="submit" className="gap-2"><Save className="h-4 w-4" />Save account</Button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input label="Phone" type="tel" placeholder="+91 9876543210" />
-                <Input label="Department" defaultValue={user.department || ''} />
-              </div>
-              <Input label="Address" placeholder="Enter your address" />
-            </CardContent>
-          </Card>
-        )}
+            </form>
+          </CardContent>
+        </Card>
+      )}
 
-        {activeTab === 'notifications' && (
+      {tab === 'notifications' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Notification preferences</CardTitle>
+            <CardDescription>Stored locally. External email/SMS delivery is deliberately not faked.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-1">
+            {[
+              ['email', 'Email summaries', 'Preference only; no external mail service is connected.'],
+              ['browser', 'Browser alerts', 'Use in-app/browser notifications when implemented by the host.'],
+              ['attendance', 'Attendance alerts', 'Prioritize attendance-related notices.'],
+              ['fees', 'Fee reminders', 'Prioritize due and overdue fee reminders.'],
+              ['notices', 'Institution notices', 'Show announcement alerts in the workspace.'],
+            ].map(([key, label, desc]) => (
+              <label key={key} className="flex cursor-pointer items-center justify-between gap-4 border-b border-slate-100 py-4 last:border-0">
+                <div>
+                  <p className="text-sm font-medium text-slate-900">{label}</p>
+                  <p className="text-xs text-slate-500">{desc}</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={prefs[key as keyof NotificationPrefs]}
+                  onChange={(event) => setPrefs({ ...prefs, [key]: event.target.checked })}
+                  className="h-5 w-5 rounded border-slate-300 text-primary-600"
+                />
+              </label>
+            ))}
+            <div className="pt-4">
+              <Button onClick={savePrefs} className="gap-2"><Save className="h-4 w-4" />Save preferences</Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {tab === 'workspace' && (
+        <div className="space-y-6">
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Notification Preferences</CardTitle>
-              <CardDescription>Manage how you receive alerts and updates</CardDescription>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-emerald-600" />Local-first workspace</CardTitle>
+              <CardDescription>Your interactive demo data is stored in this browser. No paid database is required.</CardDescription>
             </CardHeader>
-            <CardContent className="pt-0 space-y-4">
-              {[
-                { label: 'Email Notifications', desc: 'Receive updates via email', enabled: true },
-                { label: 'Push Notifications', desc: 'Get browser push notifications', enabled: true },
-                { label: 'SMS Alerts', desc: 'Receive important alerts via SMS', enabled: false },
-                { label: 'Attendance Reminders', desc: 'Daily attendance summary', enabled: true },
-                { label: 'Fee Reminders', desc: 'Payment due reminders', enabled: true },
-                { label: 'Announcements', desc: 'College announcements and notices', enabled: true },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center justify-between py-3">
-                  <div>
-                    <p className="text-sm font-medium text-slate-900">{item.label}</p>
-                    <p className="text-sm text-slate-500">{item.desc}</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" defaultChecked={item.enabled} className="sr-only peer" />
-                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600" />
-                  </label>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
-
-        {activeTab === 'appearance' && (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Theme</CardTitle>
-                <CardDescription>Choose your preferred appearance</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="grid grid-cols-3 gap-4">
-                  {[
-                    { id: 'light', label: 'Light', icon: Sun, desc: 'Clean light theme' },
-                    { id: 'dark', label: 'Dark', icon: Moon, desc: 'Dark mode' },
-                    { id: 'system', label: 'System', icon: Monitor, desc: 'Follow system' },
-                  ].map(theme => (
-                    <button key={theme.id} className="p-4 rounded-xl border border-slate-200 hover:border-primary-300 hover:bg-primary-50/50 transition-colors text-center">
-                      <theme.icon className="w-8 h-8 mx-auto mb-2 text-slate-600" />
-                      <p className="font-medium text-slate-900">{theme.label}</p>
-                      <p className="text-xs text-slate-500">{theme.desc}</p>
-                    </button>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Language & Region</CardTitle>
-                <CardDescription>Set your language and regional preferences</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Language</label>
-                    <select className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white">
-                      <option>English</option>
-                      <option>Hindi</option>
-                      <option>Tamil</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Timezone</label>
-                    <select className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white">
-                      <option>Asia/Kolkata (UTC+5:30)</option>
-                      <option>Asia/Dubai (UTC+4:00)</option>
-                      <option>America/New_York (UTC-5:00)</option>
-                    </select>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {activeTab === 'security' && (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Password</CardTitle>
-                <CardDescription>Update your account password</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0 space-y-4">
-                <Input label="Current Password" type="password" placeholder="Enter current password" />
-                <div className="grid grid-cols-2 gap-4">
-                  <Input label="New Password" type="password" placeholder="Enter new password" />
-                  <Input label="Confirm Password" type="password" placeholder="Confirm new password" />
-                </div>
-                <Button variant="primary" size="sm">Update Password</Button>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Two-Factor Authentication</CardTitle>
-                <CardDescription>Add an extra layer of security to your account</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="flex items-center justify-between py-3">
-                  <div>
-                    <p className="text-sm font-medium text-slate-900">2FA Status</p>
-                    <p className="text-sm text-slate-500">Two-factor authentication is currently disabled</p>
-                  </div>
-                  <Button variant="primary" size="sm">Enable 2FA</Button>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Active Sessions</CardTitle>
-                <CardDescription>Devices where you are currently logged in</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0 space-y-3">
+            <CardContent>
+              <div className="grid gap-3 sm:grid-cols-5">
                 {[
-                  { device: 'Chrome on Windows', ip: '192.168.1.100', lastActive: 'Now', current: true },
-                  { device: 'Safari on iPhone', ip: '192.168.1.101', lastActive: '2 hours ago', current: false },
-                ].map((s, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-slate-50">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-2 h-2 rounded-full ${s.current ? 'bg-green-500' : 'bg-slate-300'}`} />
-                      <div>
-                        <p className="text-sm font-medium text-slate-900">{s.device}</p>
-                        <p className="text-xs text-slate-500">IP: {s.ip} • {s.lastActive}</p>
-                      </div>
-                    </div>
-                    {s.current && <Badge variant="success" size="sm">Current</Badge>}
-                    {!s.current && <Button variant="ghost" size="sm" className="text-red-600 text-xs">Revoke</Button>}
+                  ['Students', students.length],
+                  ['Attendance', attendanceSessions.length],
+                  ['Assignments', assignments.length],
+                  ['Notices', notices.length],
+                  ['Fees', fees.length],
+                ].map(([label, value]) => (
+                  <div key={label} className="rounded-xl bg-slate-50 p-3 text-center">
+                    <p className="text-xl font-bold text-slate-950">{value}</p>
+                    <p className="text-xs text-slate-500">{label}</p>
                   </div>
                 ))}
-              </CardContent>
-            </Card>
-          </div>
-        )}
-      </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Backup & restore</CardTitle>
+              <CardDescription>Move the demo workspace between browsers with a JSON snapshot.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-wrap gap-3">
+              <Button variant="outline" onClick={exportSnapshot} className="gap-2"><Download className="h-4 w-4" />Export backup</Button>
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                <Upload className="h-4 w-4" />
+                Import backup
+                <input type="file" accept="application/json,.json" onChange={importSnapshot} className="hidden" />
+              </label>
+            </CardContent>
+          </Card>
+
+          <Card className="border-red-200">
+            <CardHeader>
+              <CardTitle className="text-red-800">Reset demo workspace</CardTitle>
+              <CardDescription>Restore the original sample students, attendance, assignments, notices and fees.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" onClick={resetWorkspace} className="gap-2 border-red-200 text-red-700 hover:bg-red-50">
+                <RefreshCcw className="h-4 w-4" />
+                Reset demo data
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }
