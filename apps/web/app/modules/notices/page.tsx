@@ -29,6 +29,11 @@ export default function NoticesPage() {
   const [search, setSearch] = useState('')
   const [priority, setPriority] = useState('All')
   const [open, setOpen] = useState(false)
+  const canPublish = user?.role === 'College Admin' || user?.role === 'Faculty'
+  const visibleNotices =
+    user?.role === 'Student' || user?.role === 'Parent'
+      ? notices.filter((notice) => notice.target !== 'Faculty')
+      : notices
   const [form, setForm] = useState({
     title: '',
     content: '',
@@ -40,7 +45,7 @@ export default function NoticesPage() {
 
   const filtered = useMemo(() => {
     const needle = search.trim().toLowerCase()
-    return notices.filter((notice) => {
+    return visibleNotices.filter((notice) => {
       const matchesSearch =
         !needle ||
         notice.title.toLowerCase().includes(needle) ||
@@ -49,11 +54,11 @@ export default function NoticesPage() {
       const matchesPriority = priority === 'All' || notice.priority === priority.toLowerCase()
       return matchesSearch && matchesPriority
     })
-  }, [notices, priority, search])
+  }, [priority, search, visibleNotices])
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
-    if (!form.title.trim() || !form.content.trim()) return
+    if (!canPublish || !form.title.trim() || !form.content.trim()) return
     publishNotice({
       ...form,
       author: form.author || user?.name || 'College Admin',
@@ -78,12 +83,18 @@ export default function NoticesPage() {
         <div>
           <p className="text-sm font-medium text-primary-600">{user.collegeName}</p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">Notices & Announcements</h1>
-          <p className="mt-1 text-sm text-slate-500">Publish, pin and filter institution updates with persistent local demo data.</p>
+          <p className="mt-1 text-sm text-slate-500">
+            {canPublish
+              ? 'Publish, pin and filter institution updates with persistent local demo data.'
+              : 'Read announcements relevant to the current student or parent workspace.'}
+          </p>
         </div>
-        <Button size="sm" className="gap-2" onClick={() => setOpen(true)}>
-          <Plus className="h-4 w-4" />
-          Publish notice
-        </Button>
+        {canPublish && (
+          <Button size="sm" className="gap-2" onClick={() => setOpen(true)}>
+            <Plus className="h-4 w-4" />
+            Publish notice
+          </Button>
+        )}
       </div>
 
       <Card>
@@ -112,7 +123,7 @@ export default function NoticesPage() {
           </h2>
           <div className="grid gap-4 xl:grid-cols-2">
             {pinned.map((notice) => (
-              <NoticeCard key={notice.id} notice={notice} onPin={() => toggleNoticePin(notice.id)} />
+              <NoticeCard key={notice.id} notice={notice} onPin={() => toggleNoticePin(notice.id)} canPin={canPublish} />
             ))}
           </div>
         </section>
@@ -122,7 +133,7 @@ export default function NoticesPage() {
         <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.15em] text-slate-500">Recent notices</h2>
         <div className="grid gap-4 xl:grid-cols-2">
           {regular.map((notice) => (
-            <NoticeCard key={notice.id} notice={notice} onPin={() => toggleNoticePin(notice.id)} />
+            <NoticeCard key={notice.id} notice={notice} onPin={() => toggleNoticePin(notice.id)} canPin={canPublish} />
           ))}
         </div>
       </section>
@@ -135,7 +146,7 @@ export default function NoticesPage() {
       )}
 
       <Modal
-        open={open}
+        open={canPublish && open}
         onClose={() => setOpen(false)}
         title="Publish notice"
         description="Create a realistic demo announcement. No server or paid messaging provider is required."
@@ -197,9 +208,11 @@ export default function NoticesPage() {
 function NoticeCard({
   notice,
   onPin,
+  canPin,
 }: {
   notice: ReturnType<typeof useEduStore.getState>['notices'][number]
   onPin: () => void
+  canPin: boolean
 }) {
   const priorityVariant = notice.priority === 'urgent'
     ? 'danger'
@@ -226,13 +239,15 @@ function NoticeCard({
               <Badge variant="outline" size="sm">{notice.target}</Badge>
             </div>
           </div>
-          <button
-            onClick={onPin}
-            className={`rounded-xl p-2 transition-colors ${notice.pinned ? 'bg-primary-100 text-primary-700' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700'}`}
-            aria-label={notice.pinned ? 'Unpin notice' : 'Pin notice'}
-          >
-            <Pin className="h-4 w-4" />
-          </button>
+          {canPin && (
+            <button
+              onClick={onPin}
+              className={`rounded-xl p-2 transition-colors ${notice.pinned ? 'bg-primary-100 text-primary-700' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700'}`}
+              aria-label={notice.pinned ? 'Unpin notice' : 'Pin notice'}
+            >
+              <Pin className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </CardContent>
     </Card>
