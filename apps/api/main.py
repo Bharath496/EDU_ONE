@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 
 app = FastAPI(
     title="EDU_ONE API",
-    version="0.4.0",
+    version="0.5.0",
     description=(
         "Zero-cost in-memory demo API for the EDU_ONE portfolio project. "
         "It is intentionally not a production student-information system."
@@ -31,7 +31,7 @@ app.add_middleware(
 )
 
 
-Role = Literal["Super Admin", "College Admin", "Faculty", "Student", "Parent"]
+Role = Literal["Super Admin", "College Admin", "Faculty", "Student", "Parent", "Staff"]
 AttendanceStatus = Literal["present", "absent", "late", "excused"]
 
 
@@ -129,6 +129,39 @@ class CollegeCreate(BaseModel):
     status: str = "trial"
 
 
+class CourseCreate(BaseModel):
+    code: str = Field(min_length=1)
+    name: str = Field(min_length=1)
+    credits: int = Field(default=4, ge=1, le=10)
+    department: str = "AIML"
+    semester: int = Field(default=1, ge=1, le=12)
+    faculty_id: str | None = None
+    day: str = "Monday"
+    start_time: str = "09:00"
+    end_time: str = "10:30"
+    room: str = "Room 101"
+    status: Literal["active", "inactive"] = "active"
+
+
+class MessageCreate(BaseModel):
+    sender: str = Field(min_length=1)
+    sender_role: str = "Staff"
+    recipient: str = "Everyone"
+    subject: str = Field(min_length=1)
+    body: str = Field(min_length=1)
+
+
+class SupportTicketCreate(BaseModel):
+    title: str = Field(min_length=1)
+    category: str = "General"
+    created_by: str = Field(min_length=1)
+    priority: Literal["low", "medium", "high"] = "medium"
+
+
+class SupportTicketStatus(BaseModel):
+    status: Literal["open", "in-progress", "resolved"]
+
+
 DEMO_USERS: dict[str, DemoUser] = {
     "admin@eduone.demo": DemoUser(
         id="super-admin",
@@ -170,6 +203,14 @@ DEMO_USERS: dict[str, DemoUser] = {
         college_id="eduone-demo",
         college_name="EDU_ONE Demo Institution",
     ),
+    "staff@eduone.demo": DemoUser(
+        id="staff-demo",
+        email="staff@eduone.demo",
+        name="Divya N",
+        role="Staff",
+        college_id="eduone-demo",
+        college_name="EDU_ONE Demo Institution",
+    ),
 }
 
 STUDENTS: list[dict[str, Any]] = [
@@ -205,6 +246,22 @@ BOOKS = [
     {"id": "book-2", "title": "Pattern Recognition and Machine Learning", "author": "Christopher Bishop", "category": "AI / ML", "available": 5, "total": 8},
 ]
 LIBRARY_ISSUES: list[dict[str, Any]] = []
+
+COURSES: list[dict[str, Any]] = [
+    {"id": "course-1", "code": "AIML-501", "name": "Artificial Intelligence", "credits": 4, "department": "AIML", "semester": 5, "faculty_id": "fac-1", "day": "Monday", "start_time": "09:00", "end_time": "10:30", "room": "AI Lab", "status": "active"},
+    {"id": "course-2", "code": "AIML-502", "name": "Machine Learning", "credits": 4, "department": "AIML", "semester": 5, "faculty_id": "fac-1", "day": "Thursday", "start_time": "14:00", "end_time": "15:30", "room": "AI Lab", "status": "active"},
+    {"id": "course-3", "code": "CSE-302", "name": "Database Systems", "credits": 4, "department": "CSE", "semester": 5, "faculty_id": "fac-2", "day": "Tuesday", "start_time": "09:30", "end_time": "11:00", "room": "Lab 2", "status": "active"},
+]
+
+MESSAGES: list[dict[str, Any]] = [
+    {"id": "msg-1", "sender": "Prof. Priya Sharma", "sender_role": "Faculty", "recipient": "Arjun Kumar", "subject": "Regarding internal marks", "body": "Please review the internal assessment feedback before the next class.", "at": "2026-10-12T10:30:00", "unread": True},
+    {"id": "msg-2", "sender": "Department Office", "sender_role": "Staff", "recipient": "Everyone", "subject": "Lab maintenance", "body": "AI Lab maintenance is scheduled after 4:30 PM on Friday.", "at": "2026-10-11T15:15:00", "unread": False},
+]
+
+SUPPORT_TICKETS: list[dict[str, Any]] = [
+    {"id": "ticket-1", "title": "Attendance record clarification", "category": "Academics", "created_by": "Arjun Kumar", "priority": "medium", "status": "in-progress", "created_at": "2026-10-10T12:15:00"},
+]
+
 COLLEGES = [
     {"id": "tenant-1", "name": "EDU_ONE Demo Institution", "code": "EDUDEMO", "city": "Coimbatore", "state": "Tamil Nadu", "students": 1240, "plan": "Campus", "status": "active"},
     {"id": "tenant-2", "name": "Northstar Institute of Technology", "code": "NIT-DEMO", "city": "Bengaluru", "state": "Karnataka", "students": 860, "plan": "Growth", "status": "active"},
@@ -262,7 +319,7 @@ def find_or_404(rows: list[dict[str, Any]], item_id: str, label: str) -> dict[st
 
 @app.get("/")
 def root() -> dict[str, str]:
-    return {"name": "EDU_ONE API", "version": "0.4.0", "docs": "/docs", "mode": "in-memory demo"}
+    return {"name": "EDU_ONE API", "version": "0.5.0", "docs": "/docs", "mode": "in-memory demo"}
 
 
 @app.get("/health")
@@ -305,8 +362,9 @@ def colleges() -> list[dict[str, Any]]:
 @app.get("/modules")
 def modules() -> list[str]:
     return [
-        "students", "faculty", "attendance", "exams", "assignments", "marks",
-        "fees", "library", "notices", "reports", "student-intelligence",
+        "academics", "students", "faculty", "attendance", "exams", "assignments",
+        "marks", "fees", "library", "communication", "notices", "reports",
+        "student-intelligence", "help",
     ]
 
 
@@ -368,6 +426,43 @@ def get_faculty(search: str | None = None, page: int = 1, limit: int = 50) -> di
         rows = [row for row in rows if needle in row["name"].lower() or needle in row["department"].lower()]
     start = max(page - 1, 0) * limit
     return {"items": rows[start:start + limit], "total": len(rows)}
+
+
+@app.get("/academics/courses")
+def get_courses(
+    department: str | None = None,
+    semester: int | None = None,
+    status: str | None = None,
+) -> list[dict[str, Any]]:
+    rows = COURSES
+    if department:
+        rows = [row for row in rows if row["department"] == department]
+    if semester is not None:
+        rows = [row for row in rows if row["semester"] == semester]
+    if status:
+        rows = [row for row in rows if row["status"] == status]
+    return rows
+
+
+@app.post("/academics/courses", status_code=201)
+def create_course(payload: CourseCreate) -> dict[str, Any]:
+    row = {"id": uuid4().hex[:10], **payload.model_dump()}
+    COURSES.insert(0, row)
+    return row
+
+
+@app.put("/academics/courses/{course_id}")
+def update_course(course_id: str, payload: CourseCreate) -> dict[str, Any]:
+    course = find_or_404(COURSES, course_id, "Course")
+    course.update(payload.model_dump())
+    return course
+
+
+@app.delete("/academics/courses/{course_id}")
+def delete_course(course_id: str) -> dict[str, bool]:
+    course = find_or_404(COURSES, course_id, "Course")
+    COURSES.remove(course)
+    return {"success": True}
 
 
 @app.get("/attendance")
@@ -445,6 +540,60 @@ def pay_fee(payload: PaymentRequest) -> dict[str, Any]:
     return fee
 
 
+@app.get("/communication/messages")
+def get_messages(recipient: str | None = None) -> list[dict[str, Any]]:
+    rows = MESSAGES
+    if recipient:
+        rows = [row for row in rows if row["recipient"] in {recipient, "Everyone"}]
+    return rows
+
+
+@app.post("/communication/messages", status_code=201)
+def create_message(payload: MessageCreate) -> dict[str, Any]:
+    row = {
+        "id": uuid4().hex[:10],
+        **payload.model_dump(),
+        "at": datetime.now().isoformat(),
+        "unread": True,
+    }
+    MESSAGES.insert(0, row)
+    return row
+
+
+@app.post("/communication/messages/{message_id}/read")
+def mark_message_read(message_id: str) -> dict[str, Any]:
+    message = find_or_404(MESSAGES, message_id, "Message")
+    message["unread"] = False
+    return message
+
+
+@app.get("/support/tickets")
+def get_support_tickets(createdBy: str | None = None) -> list[dict[str, Any]]:
+    rows = SUPPORT_TICKETS
+    if createdBy:
+        rows = [row for row in rows if row["created_by"] == createdBy]
+    return rows
+
+
+@app.post("/support/tickets", status_code=201)
+def create_support_ticket(payload: SupportTicketCreate) -> dict[str, Any]:
+    row = {
+        "id": uuid4().hex[:10],
+        **payload.model_dump(),
+        "status": "open",
+        "created_at": datetime.now().isoformat(),
+    }
+    SUPPORT_TICKETS.insert(0, row)
+    return row
+
+
+@app.put("/support/tickets/{ticket_id}")
+def update_support_ticket(ticket_id: str, payload: SupportTicketStatus) -> dict[str, Any]:
+    ticket = find_or_404(SUPPORT_TICKETS, ticket_id, "Support ticket")
+    ticket["status"] = payload.status
+    return ticket
+
+
 @app.get("/notices")
 def get_notices() -> list[dict[str, Any]]:
     return NOTICES
@@ -500,6 +649,9 @@ def report(type: str) -> dict[str, Any]:
         "fees": FEES,
         "assignments": ASSIGNMENTS,
         "notices": NOTICES,
+        "courses": COURSES,
+        "messages": MESSAGES,
+        "support": SUPPORT_TICKETS,
     }
     rows = sources.get(type)
     if rows is None:
