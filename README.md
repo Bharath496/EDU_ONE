@@ -20,6 +20,7 @@ It brings common academic and administrative workflows into one multi-role inter
 - Responsive sidebar and mobile navigation
 - Command palette and reusable UI components
 - Explainable student-intelligence module
+- Functional FastAPI demo backend with health, demo-data, summary, and student-risk endpoints
 - TypeScript-first frontend architecture
 - Free Vercel deployment support
 
@@ -63,20 +64,34 @@ The authentication layer is intentionally a demo implementation for portfolio us
 
 ## Run locally
 
+### Web
+
 From the repository root:
 
 ```bash
-npm install
+npm --prefix apps/web install
 npm run dev:web
 ```
 
 Then open the local Next.js URL shown in the terminal.
+
+### API
+
+Create a Python environment, install the API dependencies, then run:
+
+```bash
+pip install -r apps/api/requirements.txt
+npm run dev:api
+```
+
+The FastAPI docs are available at `http://localhost:8000/docs`.
 
 ## Quality checks
 
 ```bash
 npm run typecheck:web
 npm run build:web
+npm run test:api
 ```
 
 A GitHub Actions workflow is included so public-repository CI can check the web build automatically.
@@ -113,6 +128,9 @@ Keeping those boundaries explicit is considerably more credible than claiming a 
 ```text
 EDU_ONE/
 ├── apps/
+│   ├── api/
+│   │   ├── main.py
+│   │   └── test_main.py
 │   ├── web/
 │   │   ├── app/
 │   │   ├── components/
