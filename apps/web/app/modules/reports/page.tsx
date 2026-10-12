@@ -57,6 +57,7 @@ export default function ReportsPage() {
   const books = useEduStore((state) => state.books)
 
   const [generated, setGenerated] = useState<string | null>(null)
+  const canSeeFinancial = user?.role === 'College Admin' || user?.role === 'Super Admin'
 
   const feeCollected = fees.filter((item) => item.status === 'paid').reduce((sum, item) => sum + item.amount, 0)
   const avgAttendance = students.length
@@ -127,7 +128,7 @@ export default function ReportsPage() {
       icon: BookOpen,
       count: books.length,
     },
-  ], [assignments.length, attendance.length, books.length, exams.length, faculty.length, fees.length, marks.length, notices.length, students.length])
+  ].filter((report) => canSeeFinancial || report.id !== 'fees'), [assignments.length, attendance.length, books.length, canSeeFinancial, exams.length, faculty.length, fees.length, marks.length, notices.length, students.length])
 
   const generate = (type: ReportType) => {
     if (type === 'students') {
@@ -148,7 +149,7 @@ export default function ReportsPage() {
       saveCsv('eduone-attendance-report.csv', rows)
     }
 
-    if (type === 'fees') {
+    if (type === 'fees' && canSeeFinancial) {
       saveCsv('eduone-fees-report.csv', [
         ['Register No', 'Student', 'Fee Type', 'Amount', 'Due Date', 'Paid Date', 'Status', 'Method'],
         ...fees.map((fee) => {
@@ -265,7 +266,9 @@ export default function ReportsPage() {
         {[
           { label: 'Students', value: students.length, note: 'master records' },
           { label: 'Attendance', value: `${avgAttendance}%`, note: `${attendance.length} sessions` },
-          { label: 'Collected', value: `₹${feeCollected.toLocaleString('en-IN')}`, note: 'demo ledger' },
+          canSeeFinancial
+            ? { label: 'Collected', value: `₹${feeCollected.toLocaleString('en-IN')}`, note: 'demo ledger' }
+            : { label: 'Exams', value: exams.length, note: `${exams.filter((item) => item.status === 'upcoming').length} upcoming` },
           { label: 'Assignments', value: assignments.length, note: `${assignments.filter((item) => item.status === 'published').length} published` },
         ].map((item) => (
           <Card key={item.label}>
