@@ -135,7 +135,23 @@ export default function HomePage() {
                 EDU_ONE is an interactive multi-role demo built with Next.js, TypeScript and FastAPI.
                 The core workflows share one persisted local data layer, so actions actually affect the rest of the app.
               </p>
-              <div className="mt-7 flex flex-wrap gap-3 text-xs text-slate-300">
+              <div className="mt-7 flex flex-wrap gap-3">
+                <Button
+                  onClick={() => router.push('/auth/institution')}
+                  className="gap-2 bg-white text-slate-950 hover:bg-slate-100"
+                >
+                  Guided demo login
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => document.getElementById('quick-access')?.scrollIntoView({ behavior: 'smooth' })}
+                  className="border-white/20 bg-white/5 text-white hover:bg-white/10"
+                >
+                  Quick role access
+                </Button>
+              </div>
+              <div className="mt-5 flex flex-wrap gap-3 text-xs text-slate-300">
                 {['₹0 required service cost', 'Local-first demo data', 'Role-based navigation', 'Automated CI checks'].map((item) => (
                   <span key={item} className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">{item}</span>
                 ))}
@@ -158,7 +174,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-5 py-10 lg:px-8 lg:py-14">
+      <section id="quick-access" className="mx-auto max-w-7xl scroll-mt-6 px-5 py-10 lg:px-8 lg:py-14">
         <div className="mb-6">
           <p className="text-sm font-semibold text-indigo-300">Demo access</p>
           <h2 className="mt-1 text-2xl font-bold tracking-tight">Choose a role and enter the app</h2>
