@@ -40,6 +40,7 @@ export const GLOBAL_NAV: NavItem[] = [
   { label: 'Fees', href: '/modules/fees', icon: IndianRupee, description: 'Payments, dues, invoices, and receipts' },
   { label: 'Notices', href: '/modules/notices', icon: Megaphone, description: 'Announcements, chat, and alerts' },
   { label: 'Reports', href: '/modules/reports', icon: FileText, description: 'Exports and summaries' },
+  { label: 'Student Intelligence', href: '/modules/student-intelligence', icon: BarChart3, description: 'Academic trends and explainable risk alerts' },
   { label: 'Settings', href: '/modules/settings', icon: Settings, description: 'Preferences and system settings' },
 ]
 
