@@ -14,6 +14,7 @@ export const metadata: Metadata = {
     'A portfolio-grade multi-role college operating system demo with connected student, attendance, academic, fee, library, reporting and analytics workflows.',
   keywords: ['college management', 'student management', 'attendance', 'education technology', 'Next.js', 'FastAPI'],
   creator: 'EDU_ONE',
+  manifest: '/EDU_ONE/manifest.webmanifest',
   robots: 'index, follow',
   openGraph: {
     type: 'website',
