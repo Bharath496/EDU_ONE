@@ -23,11 +23,20 @@ export default function AssignmentsPage() {
   const { user, isAuthenticated } = useAuthStore()
   const router = useRouter()
   const assignments = useEduStore((state) => state.assignments)
+  const students = useEduStore((state) => state.students)
+  const assignmentSubmissions = useEduStore((state) => state.assignmentSubmissions)
   const addAssignment = useEduStore((state) => state.addAssignment)
+  const submitAssignment = useEduStore((state) => state.submitAssignment)
 
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('All')
   const [open, setOpen] = useState(false)
+  const canManage = user?.role === 'College Admin' || user?.role === 'Faculty'
+  const canSubmit = user?.role === 'Student'
+  const matchedStudent =
+    students.find((student) => student.name.toLowerCase() === user?.name.toLowerCase()) ??
+    students[0]
+
   const [form, setForm] = useState({
     title: '',
     course: 'Artificial Intelligence',
@@ -38,9 +47,13 @@ export default function AssignmentsPage() {
     status: 'published' as 'draft' | 'published' | 'closed',
   })
 
+  const visibleAssignments = canManage
+    ? assignments
+    : assignments.filter((assignment) => assignment.status !== 'draft')
+
   const filtered = useMemo(() => {
     const needle = search.trim().toLowerCase()
-    return assignments.filter((assignment) => {
+    return visibleAssignments.filter((assignment) => {
       const matchesSearch =
         !needle ||
         assignment.title.toLowerCase().includes(needle) ||
@@ -49,16 +62,16 @@ export default function AssignmentsPage() {
       const matchesStatus = status === 'All' || assignment.status === status.toLowerCase()
       return matchesSearch && matchesStatus
     })
-  }, [assignments, search, status])
+  }, [search, status, visibleAssignments])
 
-  const published = assignments.filter((item) => item.status === 'published').length
-  const drafts = assignments.filter((item) => item.status === 'draft').length
-  const closed = assignments.filter((item) => item.status === 'closed').length
-  const submissions = assignments.reduce((sum, item) => sum + item.submissions, 0)
+  const published = visibleAssignments.filter((item) => item.status === 'published').length
+  const drafts = visibleAssignments.filter((item) => item.status === 'draft').length
+  const closed = visibleAssignments.filter((item) => item.status === 'closed').length
+  const submissions = visibleAssignments.reduce((sum, item) => sum + item.submissions, 0)
 
   const createAssignment = (event: FormEvent) => {
     event.preventDefault()
-    if (!form.title.trim()) return
+    if (!canManage || !form.title.trim()) return
     addAssignment({ ...form, title: form.title.trim() })
     setOpen(false)
     setForm({ ...form, title: '' })
@@ -75,12 +88,18 @@ export default function AssignmentsPage() {
         <div>
           <p className="text-sm font-medium text-primary-600">{user.collegeName}</p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">Assignments</h1>
-          <p className="mt-1 text-sm text-slate-500">Create and track coursework from one persistent demo workspace.</p>
+          <p className="mt-1 text-sm text-slate-500">
+            {canManage
+              ? 'Create and track coursework from one persistent demo workspace.'
+              : 'Review published coursework and submission status in a read-focused student view.'}
+          </p>
         </div>
-        <Button size="sm" className="gap-2" onClick={() => setOpen(true)}>
-          <Plus className="h-4 w-4" />
-          Create assignment
-        </Button>
+        {canManage && (
+          <Button size="sm" className="gap-2" onClick={() => setOpen(true)}>
+            <Plus className="h-4 w-4" />
+            Create assignment
+          </Button>
+        )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -113,7 +132,7 @@ export default function AssignmentsPage() {
           <select value={status} onChange={(event) => setStatus(event.target.value)} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm">
             <option>All</option>
             <option>Published</option>
-            <option>Draft</option>
+            {canManage && <option>Draft</option>}
             <option>Closed</option>
           </select>
         </CardContent>
@@ -155,15 +174,49 @@ export default function AssignmentsPage() {
                     <p className="mt-1 font-medium text-slate-900">{assignment.submissions}/{assignment.totalStudents}</p>
                   </div>
                 </div>
-                <div>
-                  <div className="mb-1 flex items-center justify-between text-xs">
-                    <span className="text-slate-500">Submission progress</span>
-                    <span className="font-semibold text-slate-700">{completion}%</span>
+                {canManage ? (
+                  <div>
+                    <div className="mb-1 flex items-center justify-between text-xs">
+                      <span className="text-slate-500">Submission progress</span>
+                      <span className="font-semibold text-slate-700">{completion}%</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                      <div className="h-full rounded-full bg-primary-500" style={{ width: `${completion}%` }} />
+                    </div>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                    <div className="h-full rounded-full bg-primary-500" style={{ width: `${completion}%` }} />
+                ) : matchedStudent ? (
+                  <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <div>
+                      <p className="text-xs text-slate-500">Your submission</p>
+                      <p className="mt-0.5 text-sm font-semibold text-slate-900">
+                        {assignmentSubmissions.some(
+                          (item) => item.assignmentId === assignment.id && item.studentId === matchedStudent.id
+                        )
+                          ? 'Submitted'
+                          : assignment.status === 'closed'
+                            ? 'Closed'
+                            : 'Not submitted'}
+                      </p>
+                    </div>
+                    {canSubmit && assignment.status === 'published' && !assignmentSubmissions.some(
+                      (item) => item.assignmentId === assignment.id && item.studentId === matchedStudent.id
+                    ) && (
+                      <Button
+                        size="sm"
+                        className="gap-2"
+                        onClick={() => submitAssignment(assignment.id, matchedStudent.id)}
+                      >
+                        <Upload className="h-4 w-4" />
+                        Submit demo
+                      </Button>
+                    )}
+                    {assignmentSubmissions.some(
+                      (item) => item.assignmentId === assignment.id && item.studentId === matchedStudent.id
+                    ) && (
+                      <Badge variant="success" size="sm">Submitted</Badge>
+                    )}
                   </div>
-                </div>
+                ) : null}
               </CardContent>
             </Card>
           )
@@ -173,7 +226,7 @@ export default function AssignmentsPage() {
       {!filtered.length && <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center text-slate-500">No assignments match the filters.</div>}
 
       <Modal
-        open={open}
+        open={canManage && open}
         onClose={() => setOpen(false)}
         title="Create assignment"
         description="The assignment will persist in this browser demo."
