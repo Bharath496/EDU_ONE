@@ -55,7 +55,7 @@ const byHref = (hrefs: string[]) => GLOBAL_NAV.filter((item) => hrefs.includes(i
 
 export function getWorkspaceNavigation(role: string): NavItem[] {
   if (role === 'Super Admin') {
-    return [...ADMIN_NAV, ...byHref(['/dashboard', '/modules/reports', '/modules/profile', '/modules/settings'])]
+    return [...ADMIN_NAV, ...byHref(['/dashboard', '/modules/alerts', '/modules/reports', '/modules/profile', '/modules/settings'])]
   }
   if (role === 'College Admin') return GLOBAL_NAV
   if (role === 'Faculty') {
