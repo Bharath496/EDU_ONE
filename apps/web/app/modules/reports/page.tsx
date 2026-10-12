@@ -42,11 +42,6 @@ export default function ReportsPage() {
 
   const [generated, setGenerated] = useState<string | null>(null)
 
-  if (!isAuthenticated || !user) {
-    router.push('/login')
-    return null
-  }
-
   const feeCollected = fees.filter((item) => item.status === 'paid').reduce((sum, item) => sum + item.amount, 0)
   const avgAttendance = students.length
     ? Math.round(students.reduce((sum, item) => sum + item.attendance, 0) / students.length)
@@ -135,6 +130,11 @@ export default function ReportsPage() {
 
     setGenerated(type)
     window.setTimeout(() => setGenerated(null), 2500)
+  }
+
+  if (!isAuthenticated || !user) {
+    router.push('/login')
+    return null
   }
 
   return (
