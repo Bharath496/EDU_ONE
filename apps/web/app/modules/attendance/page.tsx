@@ -59,11 +59,6 @@ export default function AttendancePage() {
   const [records, setRecords] = useState<Record<string, AttendanceStatus>>({})
   const [saved, setSaved] = useState(false)
 
-  if (!isAuthenticated || !user) {
-    router.push('/login')
-    return null
-  }
-
   const selectedSession = useMemo(
     () => sessions.find((item) => item.course === course && item.date === date),
     [course, date, sessions]
@@ -119,6 +114,11 @@ export default function AttendancePage() {
     name: student.name,
     status: records[student.id] ?? 'present',
   }))
+
+  if (!isAuthenticated || !user) {
+    router.push('/login')
+    return null
+  }
 
   return (
     <div className="space-y-6 p-4 lg:p-6">
