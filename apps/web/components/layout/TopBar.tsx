@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button'
 import { CommandPalette } from '@/components/ui/CommandPalette'
 import { Dropdown, DropdownDivider, DropdownItem, DropdownMenu } from '@/components/ui/Dropdown'
 import { useAuthStore } from '@/lib/auth-store'
+import { usePlatformStore } from '@/lib/platform-store'
 import { useEduStore } from '@/lib/edu-store'
 import { getQuickActions, getWorkspaceNavigation } from '@/lib/navigation'
 
@@ -23,6 +24,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
   const students = useEduStore((state) => state.students)
   const fees = useEduStore((state) => state.fees)
   const notices = useEduStore((state) => state.notices)
+  const rolePermissions = usePlatformStore((state) => state.rolePermissions)
   const [searchOpen, setSearchOpen] = useState(false)
 
   useEffect(() => {
@@ -38,8 +40,14 @@ export function TopBar({ onMenuClick }: TopBarProps) {
 
   if (!isAuthenticated || !user) return null
 
-  const quickActions = getQuickActions(user.role)
-  const navigation = getWorkspaceNavigation(user.role)
+  const allowedHrefs =
+    user.role === 'Super Admin'
+      ? undefined
+      : rolePermissions[user.role as keyof typeof rolePermissions]
+  const navigation = getWorkspaceNavigation(user.role, allowedHrefs)
+  const quickActions = getQuickActions(user.role).filter(
+    (action) => user.role === 'Super Admin' || !allowedHrefs || allowedHrefs.includes(action.href)
+  )
   const canViewAllAlerts =
     user.role === 'College Admin' || user.role === 'Faculty' || user.role === 'Super Admin'
   const matchedStudent =
