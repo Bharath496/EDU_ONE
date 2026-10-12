@@ -3,28 +3,14 @@
 import { ReactNode, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import {
-  Bell,
-  CalendarCheck,
-  GraduationCap,
-  IndianRupee,
-  LayoutDashboard,
-  LogOut,
-  Menu,
-  Search,
-  Settings,
-  Sparkles,
-  User,
-  UserCheck,
-} from 'lucide-react'
+import { Bell, LogOut, Menu, Search, Settings, User } from 'lucide-react'
 import { Avatar } from '@/components/ui/Avatar'
-import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { CommandPalette } from '@/components/ui/CommandPalette'
 import { Dropdown, DropdownDivider, DropdownItem, DropdownMenu } from '@/components/ui/Dropdown'
 import { useAuthStore } from '@/lib/auth-store'
 import { useEduStore } from '@/lib/edu-store'
-import { getQuickActions } from '@/lib/navigation'
+import { getQuickActions, getWorkspaceNavigation } from '@/lib/navigation'
 
 interface TopBarProps {
   onMenuClick: () => void
@@ -53,14 +39,17 @@ export function TopBar({ onMenuClick }: TopBarProps) {
   if (!isAuthenticated || !user) return null
 
   const quickActions = getQuickActions(user.role)
+  const navigation = getWorkspaceNavigation(user.role)
   const alertCount =
     students.filter((item) => item.attendance < 75 || item.cgpa < 6).length +
     fees.filter((item) => item.status === 'overdue').length +
     notices.filter((item) => item.priority === 'urgent' || item.priority === 'high').length
 
+  const canOpenAlerts = navigation.some((item) => item.href === '/modules/alerts')
+
   const signOut = () => {
     clearAuth()
-    router.push('/login')
+    router.push('/')
   }
 
   return (
@@ -81,25 +70,31 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                 type="button"
               >
                 <Search className="h-4 w-4 text-slate-400" />
-                <span className="truncate text-sm">Search modules and actions</span>
-                <span className="ml-auto hidden rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] text-slate-400 sm:inline">Ctrl K</span>
+                <span className="truncate text-sm">Search your workspace</span>
+                <span className="ml-auto hidden rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] text-slate-400 sm:inline">
+                  Ctrl K
+                </span>
               </Button>
             }
             isOpen={searchOpen}
             onClose={() => setSearchOpen(false)}
           >
-            <CommandPalette.Section label="Navigation">
-              <CommandPalette.Item href="/dashboard" label="Dashboard" icon={<LayoutDashboard className="h-4 w-4" />} onSelect={() => setSearchOpen(false)} />
-              <CommandPalette.Item href="/modules/students" label="Students" icon={<GraduationCap className="h-4 w-4" />} onSelect={() => setSearchOpen(false)} />
-              <CommandPalette.Item href="/modules/faculty" label="Faculty" icon={<UserCheck className="h-4 w-4" />} onSelect={() => setSearchOpen(false)} />
-              <CommandPalette.Item href="/modules/attendance" label="Attendance" icon={<CalendarCheck className="h-4 w-4" />} onSelect={() => setSearchOpen(false)} />
-              <CommandPalette.Item href="/modules/fees" label="Fees" icon={<IndianRupee className="h-4 w-4" />} onSelect={() => setSearchOpen(false)} />
-              <CommandPalette.Item href="/modules/student-intelligence" label="Student Intelligence" icon={<Sparkles className="h-4 w-4" />} onSelect={() => setSearchOpen(false)} />
+            <CommandPalette.Section label="Available navigation">
+              {navigation.slice(0, 18).map((item) => (
+                <CommandPalette.Item
+                  key={item.href}
+                  href={item.href}
+                  label={item.label}
+                  description={item.description}
+                  icon={<item.icon className="h-4 w-4" />}
+                  onSelect={() => setSearchOpen(false)}
+                />
+              ))}
             </CommandPalette.Section>
-            <CommandPalette.Section label="Role actions">
+            <CommandPalette.Section label="Quick actions">
               {quickActions.slice(0, 5).map((action) => (
                 <CommandPalette.Item
-                  key={action.href}
+                  key={action.href + action.label}
                   href={action.href}
                   label={action.label}
                   description={action.description}
@@ -112,16 +107,18 @@ export function TopBar({ onMenuClick }: TopBarProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <Link href="/modules/alerts">
-            <Button variant="ghost" size="icon" className="relative" aria-label="Open alerts">
-              <Bell className="h-5 w-5 text-slate-600" />
-              {alertCount > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 min-w-4 rounded-full bg-red-500 px-1 text-center text-[10px] font-bold leading-4 text-white">
-                  {alertCount > 9 ? '9+' : alertCount}
-                </span>
-              )}
-            </Button>
-          </Link>
+          {canOpenAlerts && (
+            <Link href="/modules/alerts">
+              <Button variant="ghost" size="icon" className="relative" aria-label="Open alerts">
+                <Bell className="h-5 w-5 text-slate-600" />
+                {alertCount > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 min-w-4 rounded-full bg-red-500 px-1 text-center text-[10px] font-bold leading-4 text-white">
+                    {alertCount > 9 ? '9+' : alertCount}
+                  </span>
+                )}
+              </Button>
+            </Link>
+          )}
 
           <Dropdown
             trigger={
