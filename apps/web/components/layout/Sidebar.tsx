@@ -9,7 +9,7 @@ import { Avatar, AvatarGroup } from '@/components/ui/Avatar'
 import { Dropdown, DropdownMenu, DropdownItem, DropdownDivider } from '@/components/ui/Dropdown'
 import { Button } from '@/components/ui/Button'
 import { useAuthStore } from '@/lib/auth-store'
-import { getWorkspaceNavigation, getQuickActions, MOBILE_BOTTOM_NAV } from '@/lib/navigation'
+import { getWorkspaceNavigation, getQuickActions } from '@/lib/navigation'
 import { CommandPalette } from '@/components/ui/CommandPalette'
 import {
   LayoutDashboard,
