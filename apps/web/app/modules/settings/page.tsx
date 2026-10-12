@@ -58,6 +58,7 @@ export default function SettingsPage() {
   const [department, setDepartment] = useState(user?.department ?? '')
   const [prefs, setPrefs] = useState<NotificationPrefs>(defaultPrefs)
   const [message, setMessage] = useState('')
+  const canManageWorkspace = user?.role === 'College Admin' || user?.role === 'Super Admin'
 
   useEffect(() => {
     const raw = localStorage.getItem('eduone-notification-prefs')
@@ -95,6 +96,7 @@ export default function SettingsPage() {
   }
 
   const exportSnapshot = () => {
+    if (!canManageWorkspace) return
     const payload: WorkspaceSnapshot = {
       students,
       attendanceSessions,
@@ -118,6 +120,7 @@ export default function SettingsPage() {
   }
 
   const importSnapshot = async (event: ChangeEvent<HTMLInputElement>) => {
+    if (!canManageWorkspace) return
     const file = event.target.files?.[0]
     if (!file) return
     try {
@@ -145,6 +148,7 @@ export default function SettingsPage() {
   }
 
   const resetWorkspace = () => {
+    if (!canManageWorkspace) return
     if (window.confirm('Reset all EDU_ONE demo data in this browser to the default workspace?')) {
       resetDemo()
       flash('Demo workspace reset.')
@@ -154,7 +158,9 @@ export default function SettingsPage() {
   const tabs = [
     { id: 'account' as const, label: 'Account', icon: User },
     { id: 'notifications' as const, label: 'Notifications', icon: Bell },
-    { id: 'workspace' as const, label: 'Workspace', icon: Database },
+    ...(canManageWorkspace
+      ? [{ id: 'workspace' as const, label: 'Workspace', icon: Database }]
+      : []),
   ]
 
   return (
@@ -163,7 +169,11 @@ export default function SettingsPage() {
         <div>
           <p className="text-sm font-medium text-primary-600">{user.collegeName}</p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">Settings</h1>
-          <p className="mt-1 text-sm text-slate-500">Account preferences and zero-cost workspace controls.</p>
+          <p className="mt-1 text-sm text-slate-500">
+            {canManageWorkspace
+              ? 'Account preferences and zero-cost workspace controls.'
+              : 'Account and notification preferences for this role.'}
+          </p>
         </div>
         <Button
           variant="outline"
@@ -269,7 +279,7 @@ export default function SettingsPage() {
         </Card>
       )}
 
-      {tab === 'workspace' && (
+      {tab === 'workspace' && canManageWorkspace && (
         <div className="space-y-6">
           <Card>
             <CardHeader>
