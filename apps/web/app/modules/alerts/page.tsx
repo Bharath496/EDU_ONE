@@ -36,6 +36,18 @@ export default function AlertsPage() {
 
   const [filter, setFilter] = useState('all')
   const [readIds, setReadIds] = useState<string[]>([])
+  const canViewAll = user?.role === 'College Admin' || user?.role === 'Faculty' || user?.role === 'Super Admin'
+  const matchedStudent =
+    students.find((student) => student.name.toLowerCase() === user?.name.toLowerCase()) ??
+    students[0]
+  const scopedStudents = canViewAll ? students : matchedStudent ? [matchedStudent] : []
+  const scopedFees = canViewAll
+    ? fees
+    : fees.filter((fee) => fee.studentId === matchedStudent?.id)
+  const scopedNotices =
+    user?.role === 'Student' || user?.role === 'Parent'
+      ? notices.filter((notice) => notice.target !== 'Faculty')
+      : notices
 
   useEffect(() => {
     try {
@@ -49,7 +61,7 @@ export default function AlertsPage() {
   const alerts = useMemo<AlertItem[]>(() => {
     const result: AlertItem[] = []
 
-    students.forEach((student) => {
+    scopedStudents.forEach((student) => {
       if (student.attendance < 75 || student.cgpa < 6) {
         result.push({
           id: `student-${student.id}`,
@@ -62,10 +74,10 @@ export default function AlertsPage() {
       }
     })
 
-    fees
+    scopedFees
       .filter((fee) => fee.status === 'overdue' || fee.status === 'pending')
       .forEach((fee) => {
-        const student = students.find((item) => item.id === fee.studentId)
+        const student = scopedStudents.find((item) => item.id === fee.studentId) ?? students.find((item) => item.id === fee.studentId)
         result.push({
           id: `fee-${fee.id}`,
           type: 'fee',
@@ -76,7 +88,7 @@ export default function AlertsPage() {
         })
       })
 
-    notices
+    scopedNotices
       .filter((notice) => notice.priority === 'urgent' || notice.priority === 'high')
       .forEach((notice) => {
         result.push({
@@ -103,7 +115,7 @@ export default function AlertsPage() {
       })
 
     return result.sort((a, b) => b.date.localeCompare(a.date))
-  }, [exams, fees, notices, students])
+  }, [exams, scopedFees, scopedNotices, scopedStudents, students])
 
   const filtered = alerts.filter((alert) => {
     if (filter === 'all') return true
@@ -140,7 +152,11 @@ export default function AlertsPage() {
         <div>
           <p className="text-sm font-medium text-primary-600">{user.collegeName}</p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">Alerts</h1>
-          <p className="mt-1 text-sm text-slate-500">Live alerts generated from current student, fee, notice and exam data.</p>
+          <p className="mt-1 text-sm text-slate-500">
+            {canViewAll
+              ? 'Live alerts generated from current student, fee, notice and exam data.'
+              : 'Alerts scoped to the current student profile, fees, notices and upcoming exams.'}
+          </p>
         </div>
         <Button variant="outline" size="sm" className="gap-2" onClick={() => saveRead(alerts.map((item) => item.id))}>
           <CheckCheck className="h-4 w-4" />
