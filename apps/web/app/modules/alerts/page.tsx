@@ -1,104 +1,200 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card'
+import {
+  AlertCircle,
+  Bell,
+  Calendar,
+  CheckCheck,
+  GraduationCap,
+  IndianRupee,
+  Megaphone,
+} from 'lucide-react'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
+import { Card, CardContent } from '@/components/ui/Card'
 import { useAuthStore } from '@/lib/auth-store'
-import { Bell, AlertCircle, CheckCircle, Clock, Calendar, Award, IndianRupee, UserCheck, MessageSquare, Filter, CheckCheck } from 'lucide-react'
+import { useEduStore } from '@/lib/edu-store'
 
-const ALERTS = [
-  { id: '1', type: 'attendance', title: 'Low Attendance Warning', desc: 'Arjun has 72% attendance in Mathematics - below the 75% threshold', date: 'Jul 15, 2024', time: '10:30 AM', severity: 'high', read: false },
-  { id: '2', type: 'fee', title: 'Fee Payment Due', desc: 'Tuition fee of ₹45,000 for Semester 3 is due in 5 days', date: 'Jul 14, 2024', time: '09:00 AM', severity: 'high', read: false },
-  { id: '3', type: 'grade', title: 'Grade Published', desc: 'Mid-term exam results for Data Structures are now available', date: 'Jul 13, 2024', time: '02:15 PM', severity: 'medium', read: false },
-  { id: '4', type: 'event', title: 'Parent-Teacher Meeting', desc: 'PTM scheduled for July 25th from 9 AM to 4 PM', date: 'Jul 12, 2024', time: '11:00 AM', severity: 'medium', read: true },
-  { id: '5', type: 'notice', title: 'College Holiday', desc: 'College will remain closed on Aug 15th for Independence Day', date: 'Jul 11, 2024', time: '04:00 PM', severity: 'low', read: true },
-  { id: '6', type: 'achievement', title: 'Academic Achievement', desc: 'Priya has been awarded Best Student of the Year for academic excellence', date: 'Jul 10, 2024', time: '03:30 PM', severity: 'low', read: true },
-]
+type AlertItem = {
+  id: string
+  type: 'student' | 'fee' | 'notice' | 'exam'
+  title: string
+  description: string
+  severity: 'high' | 'medium' | 'low'
+  date: string
+}
 
 export default function AlertsPage() {
   const { user, isAuthenticated } = useAuthStore()
   const router = useRouter()
+  const students = useEduStore((state) => state.students)
+  const fees = useEduStore((state) => state.fees)
+  const notices = useEduStore((state) => state.notices)
+  const exams = useEduStore((state) => state.exams)
+
   const [filter, setFilter] = useState('all')
+  const [readIds, setReadIds] = useState<string[]>([])
 
-  if (!isAuthenticated || !user) { router.push('/login'); return null }
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('eduone-read-alerts')
+      if (raw) setReadIds(JSON.parse(raw))
+    } catch {
+      setReadIds([])
+    }
+  }, [])
 
-  const filtered = filter === 'all' ? ALERTS : filter === 'unread' ? ALERTS.filter(a => !a.read) : ALERTS.filter(a => a.severity === filter)
+  const alerts = useMemo<AlertItem[]>(() => {
+    const result: AlertItem[] = []
 
-  const unreadCount = ALERTS.filter(a => !a.read).length
+    students.forEach((student) => {
+      if (student.attendance < 75 || student.cgpa < 6) {
+        result.push({
+          id: `student-${student.id}`,
+          type: 'student',
+          title: 'Student needs attention',
+          description: `${student.name} has ${student.attendance}% attendance and ${student.cgpa.toFixed(1)} CGPA.`,
+          severity: student.attendance < 65 || student.cgpa < 6 ? 'high' : 'medium',
+          date: '2026-10-12',
+        })
+      }
+    })
+
+    fees
+      .filter((fee) => fee.status === 'overdue' || fee.status === 'pending')
+      .forEach((fee) => {
+        const student = students.find((item) => item.id === fee.studentId)
+        result.push({
+          id: `fee-${fee.id}`,
+          type: 'fee',
+          title: fee.status === 'overdue' ? 'Overdue fee' : 'Fee payment pending',
+          description: `${student?.name ?? 'Student'} • ${fee.feeType} • ₹${fee.amount.toLocaleString('en-IN')} due ${fee.dueDate}.`,
+          severity: fee.status === 'overdue' ? 'high' : 'medium',
+          date: fee.dueDate,
+        })
+      })
+
+    notices
+      .filter((notice) => notice.priority === 'urgent' || notice.priority === 'high')
+      .forEach((notice) => {
+        result.push({
+          id: `notice-${notice.id}`,
+          type: 'notice',
+          title: notice.title,
+          description: `${notice.author} • ${notice.target}`,
+          severity: notice.priority === 'urgent' ? 'high' : 'medium',
+          date: notice.publishedAt.slice(0, 10),
+        })
+      })
+
+    exams
+      .filter((exam) => exam.status === 'upcoming')
+      .forEach((exam) => {
+        result.push({
+          id: `exam-${exam.id}`,
+          type: 'exam',
+          title: 'Upcoming exam',
+          description: `${exam.name} • ${exam.course} • ${exam.date} at ${exam.startTime}.`,
+          severity: 'low',
+          date: exam.date,
+        })
+      })
+
+    return result.sort((a, b) => b.date.localeCompare(a.date))
+  }, [exams, fees, notices, students])
+
+  const filtered = alerts.filter((alert) => {
+    if (filter === 'all') return true
+    if (filter === 'unread') return !readIds.includes(alert.id)
+    return alert.severity === filter
+  })
+
+  if (!isAuthenticated || !user) {
+    router.push('/login')
+    return null
+  }
+
+  const saveRead = (ids: string[]) => {
+    setReadIds(ids)
+    localStorage.setItem('eduone-read-alerts', JSON.stringify(ids))
+  }
+
+  const toggleRead = (id: string) => {
+    saveRead(readIds.includes(id) ? readIds.filter((item) => item !== id) : [...readIds, id])
+  }
+
+  const unreadCount = alerts.filter((alert) => !readIds.includes(alert.id)).length
+
+  const iconFor = (type: AlertItem['type']) => {
+    if (type === 'student') return GraduationCap
+    if (type === 'fee') return IndianRupee
+    if (type === 'notice') return Megaphone
+    return Calendar
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-slate-200">
-        <div className="flex h-16 items-center justify-between px-4 lg:px-6">
-          <div>
-            <p className="text-sm text-slate-500">{user.collegeName}</p>
-            <h1 className="text-xl font-bold text-slate-900">Alerts</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" className="gap-2"><CheckCheck className="w-4 h-4" /> Mark All Read</Button>
-          </div>
+    <div className="space-y-6 p-4 lg:p-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-sm font-medium text-primary-600">{user.collegeName}</p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">Alerts</h1>
+          <p className="mt-1 text-sm text-slate-500">Live alerts generated from current student, fee, notice and exam data.</p>
         </div>
-      </header>
+        <Button variant="outline" size="sm" className="gap-2" onClick={() => saveRead(alerts.map((item) => item.id))}>
+          <CheckCheck className="h-4 w-4" />
+          Mark all read
+        </Button>
+      </div>
 
-      <div className="p-4 lg:p-6 space-y-6">
-        <div className="flex items-center gap-4">
-          <div className="flex-1">
-            <p className="text-sm text-slate-500">
-              <span className="font-semibold text-slate-900">{unreadCount}</span> unread alerts
-            </p>
-          </div>
-          <div className="flex gap-2">
-            {[
-              { id: 'all', label: 'All' },
-              { id: 'unread', label: 'Unread' },
-              { id: 'high', label: 'High' },
-              { id: 'medium', label: 'Medium' },
-              { id: 'low', label: 'Low' },
-            ].map(f => (
-              <button key={f.id} onClick={() => setFilter(f.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${filter === f.id ? 'bg-primary-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
-                {f.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          {filtered.map(alert => (
-            <Card key={alert.id} className={`hover:shadow-soft transition-shadow ${!alert.read ? 'border-l-4 border-l-primary-500 bg-primary-50/20' : ''}`}>
-              <CardContent className="p-5">
-                <div className="flex items-start gap-4">
-                  <div className={`p-2.5 rounded-xl flex-shrink-0 ${alert.severity === 'high' ? 'bg-red-100 text-red-600' : alert.severity === 'medium' ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'}`}>
-                    {alert.type === 'attendance' ? <UserCheck className="w-5 h-5" /> :
-                     alert.type === 'fee' ? <IndianRupee className="w-5 h-5" /> :
-                     alert.type === 'grade' || alert.type === 'achievement' ? <Award className="w-5 h-5" /> :
-                     alert.type === 'event' ? <Calendar className="w-5 h-5" /> :
-                     <MessageSquare className="w-5 h-5" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-slate-900">{alert.title}</h3>
-                          {!alert.read && <span className="w-2 h-2 rounded-full bg-primary-500" />}
-                        </div>
-                        <p className="text-sm text-slate-600 mt-1">{alert.desc}</p>
-                      </div>
-                      <Badge variant={alert.severity === 'high' ? 'danger' : alert.severity === 'medium' ? 'warning' : 'secondary'} size="sm" className="flex-shrink-0">{alert.severity}</Badge>
-                    </div>
-                    <div className="flex items-center gap-3 mt-2 text-xs text-slate-400">
-                      <div className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {alert.date}</div>
-                      <div className="flex items-center gap-1"><Clock className="w-3 h-3" /> {alert.time}</div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-slate-600"><span className="font-bold text-slate-950">{unreadCount}</span> unread alerts</p>
+        <div className="flex flex-wrap gap-2">
+          {['all', 'unread', 'high', 'medium', 'low'].map((item) => (
+            <button
+              key={item}
+              onClick={() => setFilter(item)}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition-colors ${filter === item ? 'bg-primary-600 text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}
+            >
+              {item}
+            </button>
           ))}
         </div>
       </div>
+
+      <div className="space-y-3">
+        {filtered.map((alert) => {
+          const Icon = iconFor(alert.type)
+          const read = readIds.includes(alert.id)
+          return (
+            <Card key={alert.id} className={!read ? 'border-l-4 border-l-primary-500' : ''}>
+              <CardContent className="flex items-start gap-4 p-5">
+                <div className={`rounded-xl p-2.5 ${alert.severity === 'high' ? 'bg-red-50 text-red-700' : alert.severity === 'medium' ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-blue-700'}`}>
+                  <Icon className="h-5 w-5" />
+                </div>
+                <button onClick={() => toggleRead(alert.id)} className="min-w-0 flex-1 text-left">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="font-semibold text-slate-950">{alert.title}</h3>
+                    {!read && <span className="h-2 w-2 rounded-full bg-primary-500" />}
+                    <Badge variant={alert.severity === 'high' ? 'danger' : alert.severity === 'medium' ? 'warning' : 'secondary'} size="sm">{alert.severity}</Badge>
+                  </div>
+                  <p className="mt-1 text-sm text-slate-600">{alert.description}</p>
+                  <p className="mt-2 text-xs text-slate-400">{alert.date} • click to {read ? 'mark unread' : 'mark read'}</p>
+                </button>
+              </CardContent>
+            </Card>
+          )
+        })}
+      </div>
+
+      {!filtered.length && (
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center">
+          <Bell className="mx-auto h-10 w-10 text-slate-300" />
+          <p className="mt-3 font-medium text-slate-800">No alerts in this filter</p>
+          <p className="text-sm text-slate-500">Human civilization survives another notification cycle.</p>
+        </div>
+      )}
     </div>
   )
 }
