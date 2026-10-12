@@ -99,3 +99,81 @@ def test_demo_summary() -> None:
     payload = response.json()
     assert payload["students"] > 0
     assert set(payload["risk_counts"]) == {"High", "Medium", "Low"}
+
+
+def test_staff_login() -> None:
+    response = client.post(
+        "/auth/login",
+        json={"email": "staff@eduone.demo", "password": ""},
+    )
+    assert response.status_code == 200
+    assert response.json()["user"]["role"] == "Staff"
+
+
+def test_academic_course_workflow() -> None:
+    created = client.post(
+        "/academics/courses",
+        json={
+            "code": "CI-501",
+            "name": "CI Course",
+            "credits": 3,
+            "department": "AIML",
+            "semester": 5,
+            "day": "Wednesday",
+            "start_time": "10:00",
+            "end_time": "11:00",
+            "room": "CI Lab",
+            "status": "active",
+        },
+    )
+    assert created.status_code == 201
+    course_id = created.json()["id"]
+
+    fetched = client.get("/academics/courses", params={"department": "AIML"})
+    assert fetched.status_code == 200
+    assert any(item["id"] == course_id for item in fetched.json())
+
+    deleted = client.delete(f"/academics/courses/{course_id}")
+    assert deleted.status_code == 200
+
+
+def test_communication_message_workflow() -> None:
+    created = client.post(
+        "/communication/messages",
+        json={
+            "sender": "CI Faculty",
+            "sender_role": "Faculty",
+            "recipient": "Students",
+            "subject": "CI Message",
+            "body": "Message created by API test.",
+        },
+    )
+    assert created.status_code == 201
+    message_id = created.json()["id"]
+    assert created.json()["unread"] is True
+
+    read = client.post(f"/communication/messages/{message_id}/read")
+    assert read.status_code == 200
+    assert read.json()["unread"] is False
+
+
+def test_support_ticket_workflow() -> None:
+    created = client.post(
+        "/support/tickets",
+        json={
+            "title": "CI Support Ticket",
+            "category": "Technical",
+            "created_by": "CI User",
+            "priority": "medium",
+        },
+    )
+    assert created.status_code == 201
+    ticket_id = created.json()["id"]
+    assert created.json()["status"] == "open"
+
+    updated = client.put(
+        f"/support/tickets/{ticket_id}",
+        json={"status": "resolved"},
+    )
+    assert updated.status_code == 200
+    assert updated.json()["status"] == "resolved"
