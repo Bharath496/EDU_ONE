@@ -38,11 +38,6 @@ export default function NoticesPage() {
     pinned: false,
   })
 
-  if (!isAuthenticated || !user) {
-    router.push('/login')
-    return null
-  }
-
   const filtered = useMemo(() => {
     const needle = search.trim().toLowerCase()
     return notices.filter((notice) => {
@@ -71,6 +66,11 @@ export default function NoticesPage() {
 
   const pinned = filtered.filter((item) => item.pinned)
   const regular = filtered.filter((item) => !item.pinned)
+
+  if (!isAuthenticated || !user) {
+    router.push('/login')
+    return null
+  }
 
   return (
     <div className="space-y-6 p-4 lg:p-6">
