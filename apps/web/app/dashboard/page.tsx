@@ -47,8 +47,8 @@ const STAT_CARDS = {
   'Super Admin': [
     { label: 'Total Colleges', value: '156', change: '+12%', trend: 'up', icon: Building2, color: 'blue' },
     { label: 'Active Users', value: '48.2K', change: '+8.5%', trend: 'up', icon: Users, color: 'green' },
-    { label: 'Revenue (MRR)', value: '$2.4M', change: '+15%', trend: 'up', icon: CreditCard, color: 'purple' },
-    { label: 'Support Tickets', value: '23', change: '-5', trend: 'down', icon: HelpCircle, color: 'red' },
+    { label: 'Demo Revenue', value: '₹24L', change: '+15%', trend: 'up', icon: CreditCard, color: 'purple' },
+    { label: 'Open Requests', value: '23', change: '-5', trend: 'down', icon: HelpCircle, color: 'red' },
   ],
   'College Admin': [
     { label: 'Total Students', value: '3,240', change: '+45', trend: 'up', icon: GraduationCap, color: 'blue' },
@@ -66,12 +66,12 @@ const STAT_CARDS = {
     { label: 'Attendance', value: '94%', change: '+2%', trend: 'up', icon: CheckCircle, color: 'green' },
     { label: 'Current GPA', value: '8.7', change: '+0.2', trend: 'up', icon: Award, color: 'blue' },
     { label: 'Assignments Due', value: '3', change: '-2', trend: 'down', icon: FilePen, color: 'amber' },
-    { label: 'Fee Balance', value: '$1,200', change: 'Due in 5 days', trend: 'neutral', icon: IndianRupee, color: 'red' },
+    { label: 'Fee Balance', value: '₹12,000', change: 'Due in 5 days', trend: 'neutral', icon: IndianRupee, color: 'red' },
   ],
   Parent: [
     { label: "Child's Attendance", value: '96%', change: '+1%', trend: 'up', icon: CheckCircle, color: 'green' },
     { label: "Child's GPA", value: '8.9', change: '+0.1', trend: 'up', icon: Award, color: 'blue' },
-    { label: 'Fee Due', value: '$800', change: 'Due in 10 days', trend: 'neutral', icon: IndianRupee, color: 'amber' },
+    { label: 'Fee Due', value: '₹8,000', change: 'Due in 10 days', trend: 'neutral', icon: IndianRupee, color: 'amber' },
     { label: 'Upcoming Events', value: '3', change: 'This month', trend: 'neutral', icon: CalendarCheck, color: 'purple' },
   ],
 }
