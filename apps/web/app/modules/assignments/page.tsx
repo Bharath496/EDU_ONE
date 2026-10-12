@@ -1,107 +1,212 @@
 'use client'
 
-import { useState } from 'react'
+import { FormEvent, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card'
+import {
+  Calendar,
+  CheckCircle2,
+  Clock3,
+  FilePen,
+  Plus,
+  Search,
+  Upload,
+} from 'lucide-react'
+import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
-import { Badge, StatusBadge } from '@/components/ui/Badge'
-import { Avatar } from '@/components/ui/Avatar'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Input } from '@/components/ui/Input'
+import { Modal } from '@/components/ui/Modal'
 import { useAuthStore } from '@/lib/auth-store'
-import { FilePen, Plus, Search, ChevronRight, Calendar, Clock, Download, Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react'
-
-const ASSIGNMENTS = [
-  { id: '1', title: 'Binary Search Tree Implementation', course: 'Data Structures', code: 'CSE-301', dueDate: 'Jul 25, 2024', totalMarks: 20, submissions: 45, total: 120, status: 'active', type: 'coding' },
-  { id: '2', title: 'Database Normalization Exercise', course: 'Database Systems', code: 'CSE-302', dueDate: 'Jul 28, 2024', totalMarks: 15, submissions: 32, total: 85, status: 'active', type: 'written' },
-  { id: '3', title: 'Process Scheduling Algorithms', course: 'Operating Systems', code: 'CSE-303', dueDate: 'Aug 01, 2024', totalMarks: 25, submissions: 18, total: 95, status: 'active', type: 'coding' },
-  { id: '4', title: 'Linked List Operations', course: 'Data Structures', code: 'CSE-301', dueDate: 'Jul 10, 2024', totalMarks: 20, submissions: 112, total: 120, status: 'grading', type: 'coding' },
-  { id: '5', title: 'SQL Query Practice', course: 'Database Systems', code: 'CSE-302', dueDate: 'Jul 05, 2024', totalMarks: 10, submissions: 80, total: 85, status: 'completed', type: 'written' },
-  { id: '6', title: 'Memory Management Essay', course: 'Operating Systems', code: 'CSE-303', dueDate: 'Jun 28, 2024', totalMarks: 15, submissions: 92, total: 95, status: 'completed', type: 'written' },
-]
+import { useEduStore } from '@/lib/edu-store'
 
 export default function AssignmentsPage() {
   const { user, isAuthenticated } = useAuthStore()
   const router = useRouter()
+  const assignments = useEduStore((state) => state.assignments)
+  const addAssignment = useEduStore((state) => state.addAssignment)
+
   const [search, setSearch] = useState('')
+  const [status, setStatus] = useState('All')
+  const [open, setOpen] = useState(false)
+  const [form, setForm] = useState({
+    title: '',
+    course: 'Artificial Intelligence',
+    department: 'AIML',
+    dueDate: '2026-10-20',
+    maxMarks: 50,
+    totalStudents: 42,
+    status: 'published' as 'draft' | 'published' | 'closed',
+  })
 
-  if (!isAuthenticated || !user) { router.push('/login'); return null }
+  if (!isAuthenticated || !user) {
+    router.push('/login')
+    return null
+  }
 
-  const filtered = ASSIGNMENTS.filter(a =>
-    a.title.toLowerCase().includes(search.toLowerCase()) ||
-    a.course.toLowerCase().includes(search.toLowerCase()) ||
-    a.code.toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = useMemo(() => {
+    const needle = search.trim().toLowerCase()
+    return assignments.filter((assignment) => {
+      const matchesSearch =
+        !needle ||
+        assignment.title.toLowerCase().includes(needle) ||
+        assignment.course.toLowerCase().includes(needle) ||
+        assignment.department.toLowerCase().includes(needle)
+      const matchesStatus = status === 'All' || assignment.status === status.toLowerCase()
+      return matchesSearch && matchesStatus
+    })
+  }, [assignments, search, status])
+
+  const published = assignments.filter((item) => item.status === 'published').length
+  const drafts = assignments.filter((item) => item.status === 'draft').length
+  const closed = assignments.filter((item) => item.status === 'closed').length
+  const submissions = assignments.reduce((sum, item) => sum + item.submissions, 0)
+
+  const createAssignment = (event: FormEvent) => {
+    event.preventDefault()
+    if (!form.title.trim()) return
+    addAssignment({ ...form, title: form.title.trim() })
+    setOpen(false)
+    setForm({ ...form, title: '' })
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-slate-200">
-        <div className="flex h-16 items-center justify-between px-4 lg:px-6">
-          <div>
-            <p className="text-sm text-slate-500">{user.collegeName}</p>
-            <h1 className="text-xl font-bold text-slate-900">Assignments</h1>
-          </div>
-          <Link href="/modules/assignments/new">
-            <Button variant="primary" size="sm" className="gap-2"><Plus className="w-4 h-4" /> Create Assignment</Button>
-          </Link>
+    <div className="space-y-6 p-4 lg:p-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-sm font-medium text-primary-600">{user.collegeName}</p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">Assignments</h1>
+          <p className="mt-1 text-sm text-slate-500">Create and track coursework from one persistent demo workspace.</p>
         </div>
-      </header>
-
-      <div className="p-4 lg:p-6 space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-          {[
-            { label: 'Active', value: ASSIGNMENTS.filter(a => a.status === 'active').length, icon: FilePen, color: 'blue' },
-            { label: 'Pending Grading', value: ASSIGNMENTS.filter(a => a.status === 'grading').length, icon: Clock, color: 'amber' },
-            { label: 'Completed', value: ASSIGNMENTS.filter(a => a.status === 'completed').length, icon: CheckCircle, color: 'green' },
-            { label: 'Total Submissions', value: ASSIGNMENTS.reduce((s, a) => s + a.submissions, 0), icon: Upload, color: 'purple' },
-          ].map((stat, i) => (
-            <Card key={i}>
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="p-3 rounded-2xl bg-slate-100 text-slate-700"><stat.icon className="w-6 h-6" /></div>
-                <div>
-                  <p className="text-sm text-slate-500">{stat.label}</p>
-                  <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-          <input type="text" placeholder="Search assignments by title or course..." value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
-        </div>
-
-        <div className="space-y-3">
-          {filtered.map(a => (
-            <Card key={a.id} className="hover:shadow-soft transition-shadow">
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-semibold text-slate-900">{a.title}</h3>
-                      <Badge variant={a.type === 'coding' ? 'primary' : 'secondary'} size="sm">{a.type}</Badge>
-                      <StatusBadge status={a.status} size="sm" />
-                    </div>
-                    <p className="text-sm text-slate-500">{a.course} ({a.code})</p>
-                    <div className="flex items-center gap-4 mt-3 text-sm text-slate-600">
-                      <div className="flex items-center gap-1.5"><Calendar className="w-4 h-4" /> Due: {a.dueDate}</div>
-                      <div className="flex items-center gap-1.5"><FileText className="w-4 h-4" /> {a.totalMarks} marks</div>
-                      <div className="flex items-center gap-1.5">
-                        <Upload className="w-4 h-4" />
-                        {a.submissions}/{a.total} submitted
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 ml-4">
-                    <Button variant="outline" size="sm" className="gap-1.5"><Download className="w-4 h-4" /> View</Button>
-                    {a.status === 'grading' && <Button variant="primary" size="sm">Grade</Button>}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <Button size="sm" className="gap-2" onClick={() => setOpen(true)}>
+          <Plus className="h-4 w-4" />
+          Create assignment
+        </Button>
       </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {[
+          { label: 'Published', value: published, icon: FilePen, cls: 'bg-blue-50 text-blue-700' },
+          { label: 'Drafts', value: drafts, icon: Clock3, cls: 'bg-amber-50 text-amber-700' },
+          { label: 'Closed', value: closed, icon: CheckCircle2, cls: 'bg-emerald-50 text-emerald-700' },
+          { label: 'Submissions', value: submissions, icon: Upload, cls: 'bg-violet-50 text-violet-700' },
+        ].map((item) => (
+          <Card key={item.label}>
+            <CardContent className="flex items-center gap-4 p-5">
+              <div className={`rounded-2xl p-3 ${item.cls}`}><item.icon className="h-6 w-6" /></div>
+              <div>
+                <p className="text-sm text-slate-500">{item.label}</p>
+                <p className="text-2xl font-bold text-slate-950">{item.value}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Card>
+        <CardContent className="grid gap-3 p-4 md:grid-cols-[1fr_180px]">
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search title, course or department"
+            leftIcon={<Search className="h-4 w-4 text-slate-400" />}
+          />
+          <select value={status} onChange={(event) => setStatus(event.target.value)} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm">
+            <option>All</option>
+            <option>Published</option>
+            <option>Draft</option>
+            <option>Closed</option>
+          </select>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        {filtered.map((assignment) => {
+          const completion = assignment.totalStudents
+            ? Math.round((assignment.submissions / assignment.totalStudents) * 100)
+            : 0
+          return (
+            <Card key={assignment.id} className="overflow-hidden">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <CardTitle className="text-lg">{assignment.title}</CardTitle>
+                    <CardDescription>{assignment.course} • {assignment.department}</CardDescription>
+                  </div>
+                  <Badge
+                    variant={assignment.status === 'published' ? 'primary' : assignment.status === 'closed' ? 'success' : 'secondary'}
+                    size="sm"
+                  >
+                    {assignment.status}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-3 gap-3 text-sm">
+                  <div className="rounded-xl bg-slate-50 p-3">
+                    <p className="text-xs text-slate-500">Due date</p>
+                    <p className="mt-1 flex items-center gap-1 font-medium text-slate-900"><Calendar className="h-3.5 w-3.5" />{assignment.dueDate}</p>
+                  </div>
+                  <div className="rounded-xl bg-slate-50 p-3">
+                    <p className="text-xs text-slate-500">Marks</p>
+                    <p className="mt-1 font-medium text-slate-900">{assignment.maxMarks}</p>
+                  </div>
+                  <div className="rounded-xl bg-slate-50 p-3">
+                    <p className="text-xs text-slate-500">Submitted</p>
+                    <p className="mt-1 font-medium text-slate-900">{assignment.submissions}/{assignment.totalStudents}</p>
+                  </div>
+                </div>
+                <div>
+                  <div className="mb-1 flex items-center justify-between text-xs">
+                    <span className="text-slate-500">Submission progress</span>
+                    <span className="font-semibold text-slate-700">{completion}%</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                    <div className="h-full rounded-full bg-primary-500" style={{ width: `${completion}%` }} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )
+        })}
+      </div>
+
+      {!filtered.length && <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center text-slate-500">No assignments match the filters.</div>}
+
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Create assignment"
+        description="The assignment will persist in this browser demo."
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button type="submit" form="assignment-form">Create</Button>
+          </div>
+        }
+      >
+        <form id="assignment-form" onSubmit={createAssignment} className="grid gap-4 md:grid-cols-2">
+          <div className="md:col-span-2">
+            <Input label="Assignment title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
+          </div>
+          <Input label="Course" value={form.course} onChange={(e) => setForm({ ...form, course: e.target.value })} />
+          <Input label="Department" value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} />
+          <Input label="Due date" type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} />
+          <Input label="Maximum marks" type="number" min={1} value={form.maxMarks} onChange={(e) => setForm({ ...form, maxMarks: Number(e.target.value) })} />
+          <Input label="Class strength" type="number" min={1} value={form.totalStudents} onChange={(e) => setForm({ ...form, totalStudents: Number(e.target.value) })} />
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Status</label>
+            <select
+              value={form.status}
+              onChange={(e) => setForm({ ...form, status: e.target.value as 'draft' | 'published' | 'closed' })}
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm"
+            >
+              <option value="published">Published</option>
+              <option value="draft">Draft</option>
+              <option value="closed">Closed</option>
+            </select>
+          </div>
+        </form>
+      </Modal>
     </div>
   )
 }
