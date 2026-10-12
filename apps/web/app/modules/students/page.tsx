@@ -84,11 +84,6 @@ export default function StudentsPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<StudentForm>(emptyForm)
 
-  if (!isAuthenticated || !user) {
-    router.push('/login')
-    return null
-  }
-
   const departments = ['All', ...Array.from(new Set(students.map((item) => item.department))).sort()]
 
   const filtered = useMemo(() => {
@@ -146,6 +141,11 @@ export default function StudentsPage() {
     if (window.confirm(`Remove ${student.name} (${student.regNo}) from the demo workspace?`)) {
       removeStudent(student.id)
     }
+  }
+
+  if (!isAuthenticated || !user) {
+    router.push('/login')
+    return null
   }
 
   return (
