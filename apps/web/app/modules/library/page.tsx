@@ -1,148 +1,187 @@
 'use client'
 
-import { useState } from 'react'
+import { FormEvent, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card'
+import {
+  AlertTriangle,
+  BookOpen,
+  Bookmark,
+  Download,
+  Library,
+  Plus,
+  Search,
+} from 'lucide-react'
+import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
-import { Badge, StatusBadge } from '@/components/ui/Badge'
-import { Avatar } from '@/components/ui/Avatar'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Input } from '@/components/ui/Input'
+import { Modal } from '@/components/ui/Modal'
 import { useAuthStore } from '@/lib/auth-store'
-import { Library, Search, Plus, ChevronRight, Download, BookOpen, User, Calendar, Clock, AlertTriangle, Bookmark } from 'lucide-react'
-
-const BOOKS = [
-  { id: '1', title: 'Introduction to Algorithms', author: 'Thomas H. Cormen', isbn: '978-0262033848', category: 'Computer Science', total: 10, available: 7, location: 'CS-A3' },
-  { id: '2', title: 'Database System Concepts', author: 'Abraham Silberschatz', isbn: '978-0078022159', category: 'Computer Science', total: 8, available: 4, location: 'CS-B2' },
-  { id: '3', title: 'Operating System Concepts', author: 'Abraham Silberschatz', isbn: '978-1118063330', category: 'Computer Science', total: 12, available: 9, location: 'CS-A5' },
-  { id: '4', title: 'Engineering Mathematics', author: 'B.S. Grewal', isbn: '978-8174092155', category: 'Mathematics', total: 15, available: 11, location: 'MA-C1' },
-  { id: '5', title: 'Fundamentals of Physics', author: 'Halliday Resnick', isbn: '978-1118230718', category: 'Physics', total: 6, available: 2, location: 'PH-D2' },
-  { id: '6', title: 'Organic Chemistry', author: 'Morrison & Boyd', isbn: '978-0134042282', category: 'Chemistry', total: 5, available: 5, location: 'CH-E1' },
-]
-
-const RECENT_ISSUES = [
-  { id: '1', book: 'Introduction to Algorithms', student: 'Arjun Kumar', regNo: '23CS001', issued: 'Jul 10, 2024', due: 'Jul 24, 2024', status: 'issued' },
-  { id: '2', book: 'Database System Concepts', student: 'Priya Sharma', regNo: '23CS002', issued: 'Jul 08, 2024', due: 'Jul 22, 2024', status: 'issued' },
-  { id: '3', book: 'Engineering Mathematics', student: 'Rahul Verma', regNo: '23EC003', issued: 'Jun 25, 2024', due: 'Jul 09, 2024', status: 'overdue' },
-  { id: '4', book: 'Operating System Concepts', student: 'Neha Kapoor', regNo: '23EC008', issued: 'Jul 05, 2024', due: 'Jul 19, 2024', status: 'returned' },
-]
+import { useEduStore } from '@/lib/edu-store'
 
 export default function LibraryPage() {
   const { user, isAuthenticated } = useAuthStore()
   const router = useRouter()
+  const books = useEduStore((state) => state.books)
+  const addBook = useEduStore((state) => state.addBook)
+  const issueBook = useEduStore((state) => state.issueBook)
   const [search, setSearch] = useState('')
+  const [open, setOpen] = useState(false)
+  const [form, setForm] = useState({
+    title: '',
+    author: '',
+    isbn: '',
+    category: 'Computer Science',
+    total: 1,
+    available: 1,
+    location: '',
+  })
 
-  if (!isAuthenticated || !user) { router.push('/login'); return null }
+  const filtered = books.filter((book) => {
+    const needle = search.trim().toLowerCase()
+    return (
+      !needle ||
+      book.title.toLowerCase().includes(needle) ||
+      book.author.toLowerCase().includes(needle) ||
+      book.category.toLowerCase().includes(needle) ||
+      book.isbn.includes(needle)
+    )
+  })
 
-  const filteredBooks = BOOKS.filter(b =>
-    b.title.toLowerCase().includes(search.toLowerCase()) ||
-    b.author.toLowerCase().includes(search.toLowerCase()) ||
-    b.category.toLowerCase().includes(search.toLowerCase()) ||
-    b.isbn.includes(search)
-  )
+  if (!isAuthenticated || !user) {
+    router.push('/login')
+    return null
+  }
+
+  const submit = (event: FormEvent) => {
+    event.preventDefault()
+    if (!form.title.trim() || !form.author.trim()) return
+    addBook({
+      ...form,
+      title: form.title.trim(),
+      author: form.author.trim(),
+      available: Math.min(form.available, form.total),
+    })
+    setOpen(false)
+    setForm({ ...form, title: '', author: '', isbn: '', location: '' })
+  }
+
+  const exportCsv = () => {
+    const csv = [
+      ['Title', 'Author', 'ISBN', 'Category', 'Total', 'Available', 'Location'],
+      ...filtered.map((book) => [book.title, book.author, book.isbn, book.category, book.total, book.available, book.location]),
+    ].map((row) => row.map((value) => `"${String(value).replaceAll('"', '""')}"`).join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = 'eduone-library.csv'
+    anchor.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const totalCopies = books.reduce((sum, book) => sum + book.total, 0)
+  const availableCopies = books.reduce((sum, book) => sum + book.available, 0)
+  const issuedCopies = totalCopies - availableCopies
+  const lowStock = books.filter((book) => book.available <= 2).length
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-slate-200">
-        <div className="flex h-16 items-center justify-between px-4 lg:px-6">
-          <div>
-            <p className="text-sm text-slate-500">{user.collegeName}</p>
-            <h1 className="text-xl font-bold text-slate-900">Library</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" className="gap-2"><Download className="w-4 h-4" /> Export</Button>
-            <Button variant="primary" size="sm" className="gap-2"><Plus className="w-4 h-4" /> Add Book</Button>
-          </div>
+    <div className="space-y-6 p-4 lg:p-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-sm font-medium text-primary-600">{user.collegeName}</p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">Library</h1>
+          <p className="mt-1 text-sm text-slate-500">Persistent catalog inventory with issue simulation and CSV export.</p>
         </div>
-      </header>
-
-      <div className="p-4 lg:p-6 space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-          {[
-            { label: 'Total Books', value: BOOKS.reduce((s, b) => s + b.total, 0), icon: BookOpen },
-            { label: 'Available', value: BOOKS.reduce((s, b) => s + b.available, 0), icon: Bookmark },
-            { label: 'Issued', value: RECENT_ISSUES.filter(i => i.status === 'issued').length, icon: User },
-            { label: 'Overdue', value: RECENT_ISSUES.filter(i => i.status === 'overdue').length, icon: AlertTriangle },
-          ].map((stat, i) => (
-            <Card key={i}>
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="p-3 rounded-2xl bg-slate-100 text-slate-700"><stat.icon className="w-6 h-6" /></div>
-                <div>
-                  <p className="text-sm text-slate-500">{stat.label}</p>
-                  <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Books Catalog</CardTitle>
-                <CardDescription>Browse available books in the library</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="relative mb-4">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input type="text" placeholder="Search by title, author, ISBN, or category..." value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
-                </div>
-                <div className="space-y-3">
-                  {filteredBooks.map(book => (
-                    <div key={book.id} className="flex items-start gap-4 p-4 rounded-xl border border-slate-100 hover:border-primary-200 hover:bg-primary-50/50 transition-colors">
-                      <div className="w-12 h-16 rounded-lg bg-gradient-to-br from-primary-100 to-primary-50 flex items-center justify-center flex-shrink-0">
-                        <BookOpen className="w-6 h-6 text-primary-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-slate-900">{book.title}</h4>
-                        <p className="text-sm text-slate-500">{book.author}</p>
-                        <div className="flex items-center gap-3 mt-2 text-xs text-slate-400">
-                          <span>ISBN: {book.isbn}</span>
-                          <span>{book.category}</span>
-                          <span>Shelf: {book.location}</span>
-                        </div>
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <p className={`text-lg font-bold ${book.available > 0 ? 'text-green-600' : 'text-red-600'}`}>{book.available}</p>
-                        <p className="text-xs text-slate-400">of {book.total} available</p>
-                        {book.available > 0 && <Badge variant="success" size="sm" className="mt-1">In Stock</Badge>}
-                        {book.available === 0 && <Badge variant="danger" size="sm" className="mt-1">Out</Badge>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="space-y-6">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Recent Issues</CardTitle>
-                <CardDescription>Currently issued and overdue books</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0 space-y-3">
-                {RECENT_ISSUES.map(issue => (
-                  <div key={issue.id} className="p-3 rounded-xl border border-slate-100">
-                    <div className="flex items-start justify-between mb-2">
-                      <p className="text-sm font-medium text-slate-900">{issue.book}</p>
-                      <StatusBadge status={issue.status} size="sm" />
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
-                      <User className="w-3 h-3" />
-                      <span>{issue.student} ({issue.regNo})</span>
-                    </div>
-                    <div className="flex items-center gap-4 mt-1 text-xs text-slate-400">
-                      <div className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {issue.issued}</div>
-                      <div className="flex items-center gap-1"><Clock className="w-3 h-3" /> {issue.due}</div>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={exportCsv} className="gap-2"><Download className="h-4 w-4" />Export</Button>
+          <Button size="sm" onClick={() => setOpen(true)} className="gap-2"><Plus className="h-4 w-4" />Add book</Button>
         </div>
       </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {[
+          { label: 'Total copies', value: totalCopies, icon: BookOpen, cls: 'bg-blue-50 text-blue-700' },
+          { label: 'Available', value: availableCopies, icon: Bookmark, cls: 'bg-emerald-50 text-emerald-700' },
+          { label: 'Issued', value: issuedCopies, icon: Library, cls: 'bg-violet-50 text-violet-700' },
+          { label: 'Low stock titles', value: lowStock, icon: AlertTriangle, cls: 'bg-amber-50 text-amber-700' },
+        ].map((item) => (
+          <Card key={item.label}>
+            <CardContent className="flex items-center gap-4 p-5">
+              <div className={`rounded-2xl p-3 ${item.cls}`}><item.icon className="h-6 w-6" /></div>
+              <div><p className="text-sm text-slate-500">{item.label}</p><p className="text-2xl font-bold text-slate-950">{item.value}</p></div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Book catalog</CardTitle>
+          <CardDescription>Issue actions reduce available inventory in the persistent demo store.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-5 max-w-lg">
+            <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search title, author, ISBN or category" leftIcon={<Search className="h-4 w-4 text-slate-400" />} />
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {filtered.map((book) => {
+              const availability = book.total ? Math.round((book.available / book.total) * 100) : 0
+              return (
+                <div key={book.id} className="rounded-2xl border border-slate-200 p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-16 w-12 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-700">
+                      <BookOpen className="h-6 w-6" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold text-slate-950">{book.title}</h3>
+                      <p className="mt-0.5 text-sm text-slate-500">{book.author}</p>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        <Badge variant="secondary" size="sm">{book.category}</Badge>
+                        <Badge variant={book.available > 2 ? 'success' : book.available > 0 ? 'warning' : 'danger'} size="sm">{book.available}/{book.total} available</Badge>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
+                    <div className="h-full rounded-full bg-primary-500" style={{ width: `${availability}%` }} />
+                  </div>
+                  <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+                    <span>{book.location}</span>
+                    <span>ISBN {book.isbn}</span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-4 w-full"
+                    disabled={book.available <= 0}
+                    onClick={() => issueBook(book.id)}
+                  >
+                    {book.available > 0 ? 'Issue one copy' : 'Out of stock'}
+                  </Button>
+                </div>
+              )
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Add library book"
+        description="Add a catalog item to the local workspace."
+        footer={<div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" form="book-form">Add book</Button></div>}
+      >
+        <form id="book-form" onSubmit={submit} className="grid gap-4 md:grid-cols-2">
+          <Input label="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
+          <Input label="Author" value={form.author} onChange={(e) => setForm({ ...form, author: e.target.value })} required />
+          <Input label="ISBN" value={form.isbn} onChange={(e) => setForm({ ...form, isbn: e.target.value })} />
+          <Input label="Category" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+          <Input label="Shelf location" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
+          <Input label="Total copies" type="number" min={1} value={form.total} onChange={(e) => setForm({ ...form, total: Number(e.target.value), available: Math.min(form.available, Number(e.target.value)) })} />
+          <Input label="Available copies" type="number" min={0} value={form.available} onChange={(e) => setForm({ ...form, available: Number(e.target.value) })} />
+        </form>
+      </Modal>
     </div>
   )
 }
