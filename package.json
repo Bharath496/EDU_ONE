@@ -6,9 +6,10 @@
     "dev:web": "npm --prefix apps/web run dev",
     "build:web": "npm --prefix apps/web run build",
     "start:web": "npm --prefix apps/web run start",
-    "dev:api": "npm --prefix apps/api run dev",
+    "dev:api": "python -m uvicorn main:app --app-dir apps/api --reload --port 8000",
     "typecheck:web": "npm --prefix apps/web run typecheck",
-    "lint:web": "npm --prefix apps/web run lint"
+    "lint:web": "npm --prefix apps/web run lint",
+    "test:api": "python -m pytest apps/api/test_main.py -q"
   },
   "devDependencies": {
     "typescript": "^5.5.4"
