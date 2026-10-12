@@ -29,6 +29,9 @@ type ReportType =
   | 'marks'
   | 'faculty'
   | 'library'
+  | 'courses'
+  | 'messages'
+  | 'support'
 
 function saveCsv(filename: string, rows: Array<Array<string | number>>) {
   const csv = rows
@@ -55,6 +58,9 @@ export default function ReportsPage() {
   const marks = useEduStore((state) => state.marks)
   const faculty = useEduStore((state) => state.faculty)
   const books = useEduStore((state) => state.books)
+  const courses = useEduStore((state) => state.courses)
+  const messages = useEduStore((state) => state.messages)
+  const supportTickets = useEduStore((state) => state.supportTickets)
 
   const [generated, setGenerated] = useState<string | null>(null)
   const canSeeFinancial = user?.role === 'College Admin' || user?.role === 'Super Admin'
@@ -128,7 +134,28 @@ export default function ReportsPage() {
       icon: BookOpen,
       count: books.length,
     },
-  ].filter((report) => canSeeFinancial || report.id !== 'fees'), [assignments.length, attendance.length, books.length, canSeeFinancial, exams.length, faculty.length, fees.length, marks.length, notices.length, students.length])
+    {
+      id: 'courses' as ReportType,
+      title: 'Academic Course Catalog',
+      description: 'Course codes, credits, departments, semesters, faculty and timetable data.',
+      icon: BookOpen,
+      count: courses.length,
+    },
+    {
+      id: 'messages' as ReportType,
+      title: 'Communication Log',
+      description: 'Local demo message metadata including sender, recipient and read state.',
+      icon: Megaphone,
+      count: messages.length,
+    },
+    {
+      id: 'support' as ReportType,
+      title: 'Support Tickets',
+      description: 'Ticket category, creator, priority, status and creation time.',
+      icon: FileSpreadsheet,
+      count: supportTickets.length,
+    },
+  ].filter((report) => canSeeFinancial || report.id !== 'fees'), [assignments.length, attendance.length, books.length, canSeeFinancial, courses.length, exams.length, faculty.length, fees.length, marks.length, messages.length, notices.length, students.length, supportTickets.length])
 
   const generate = (type: ReportType) => {
     if (type === 'students') {
@@ -239,6 +266,53 @@ export default function ReportsPage() {
           item.total,
           item.available,
           item.location,
+        ]),
+      ])
+    }
+
+    if (type === 'courses') {
+      saveCsv('eduone-courses-report.csv', [
+        ['Code', 'Course', 'Credits', 'Department', 'Semester', 'Faculty ID', 'Day', 'Start', 'End', 'Room', 'Status'],
+        ...courses.map((item) => [
+          item.code,
+          item.name,
+          item.credits,
+          item.department,
+          item.semester,
+          item.facultyId ?? '',
+          item.day,
+          item.startTime,
+          item.endTime,
+          item.room,
+          item.status,
+        ]),
+      ])
+    }
+
+    if (type === 'messages') {
+      saveCsv('eduone-communication-report.csv', [
+        ['Sender', 'Sender Role', 'Recipient', 'Subject', 'Date', 'Read State'],
+        ...messages.map((item) => [
+          item.sender,
+          item.senderRole,
+          item.recipient,
+          item.subject,
+          item.at,
+          item.unread ? 'Unread' : 'Read',
+        ]),
+      ])
+    }
+
+    if (type === 'support') {
+      saveCsv('eduone-support-report.csv', [
+        ['Title', 'Category', 'Created By', 'Priority', 'Status', 'Created At'],
+        ...supportTickets.map((item) => [
+          item.title,
+          item.category,
+          item.createdBy,
+          item.priority,
+          item.status,
+          item.createdAt,
         ]),
       ])
     }
