@@ -1,48 +1,112 @@
 # EDU_ONE
 
-**EDU_ONE** is a portfolio-grade college operating-system concept built with Next.js and TypeScript.
+EDU_ONE is a **portfolio-grade college operating system demo** built with Next.js, TypeScript, Zustand and FastAPI.
 
-It brings common academic and administrative workflows into one multi-role interface for students, faculty, parents, college administrators, and platform administrators.
+It is deliberately designed to be useful at **zero required service cost** for a portfolio/demo environment. Core frontend workflows persist in the browser, while the repository also includes a functional in-memory FastAPI backend that mirrors the main domains.
 
-## What it demonstrates
+> EDU_ONE is not presented as a production student-information system. Real institutional deployment would require production authentication, a persistent database, tenant isolation, audit logs, privacy controls, backups, secure file storage and payment-provider integration.
 
-- Role-based login flows
-- Multi-role dashboards
-- Student records
-- Faculty management
-- Attendance workflows
-- Exams and marks
-- Assignments
-- Fee tracking
-- Notices and announcements
-- Library workflows
-- Reports and settings
-- Responsive sidebar and mobile navigation
-- Command palette and reusable UI components
-- Explainable student-intelligence module
-- Functional FastAPI demo backend with health, demo-data, summary, and student-risk endpoints
-- TypeScript-first frontend architecture
-- Free Vercel deployment support
+## What is now functional
 
-## Student Intelligence
+### Connected college workspace
 
-The Student Intelligence module adds a practical analytics layer without paid services.
+The main app uses one persistent local data layer, so modules are no longer isolated static mockups.
 
-It includes:
+- **Dashboard**
+  - live student, attendance, fee and risk metrics
+  - department snapshot
+  - current priorities
+  - role-based quick actions
+  - workspace activity log
 
-- student search
-- department filters
-- score and attendance KPIs
-- recent performance trend
-- transparent High / Medium / Low academic-risk classification
-- readable reasons for every risk flag
-- CSV export
+- **Students**
+  - create, edit and remove students
+  - search and department/status filters
+  - active/inactive status control
+  - CSV export
 
-The logic is intentionally explainable. It does not pretend that a black-box AI score is automatically trustworthy.
+- **Attendance**
+  - course and date based sessions
+  - present / absent / late / excused states
+  - bulk marking
+  - persistent sessions
+  - automatic recalculation of student attendance
+  - CSV export
 
-## Demo roles
+- **Assignments**
+  - create assignments
+  - draft / published / closed states
+  - submission-progress display
+  - persistent filters
 
-The current portfolio build includes demo sessions for:
+- **Exams**
+  - schedule exams
+  - assessment type and status
+  - venue, date, time, marks and class strength
+
+- **Marks & Grades**
+  - editable internal and external marks
+  - live total, grade and pass/fail calculation
+  - search, course filters and CSV export
+
+- **Fees**
+  - fee ledger and status filters
+  - collected / pending / overdue metrics
+  - demo payment completion
+  - CSV export
+
+- **Library**
+  - persistent book catalog
+  - add books
+  - inventory availability
+  - issue-copy simulation
+  - CSV export
+
+- **Notices**
+  - publish announcements
+  - priority and audience controls
+  - pin / unpin
+  - filters and search
+
+- **Alerts**
+  - generated from current students, fees, notices and exams
+  - read/unread state
+  - severity filters
+  - mark-all-read
+
+- **Student Intelligence**
+  - explainable High / Medium / Low academic-risk classification
+  - uses live CGPA, attendance and record status
+  - department watchlist
+  - risk filtering and CSV export
+  - no paid AI API required
+
+- **Reports**
+  - real CSV generation from current workspace data
+  - student, attendance, fee, assignment and notice exports
+
+- **Profile & Settings**
+  - editable demo profile
+  - local notification preferences
+  - JSON workspace backup and restore
+  - reset demo workspace
+
+### Super-admin demo
+
+Super Admin has a separate persistent platform-demo data store.
+
+- fictional tenant institution management
+- add / activate / pause demo tenants
+- platform-user management
+- illustrative plan ledger
+- analytics calculated from the demo store
+- platform settings and reset controls
+
+All institution/customer records in the Super Admin area are explicitly fictional demo data.
+
+## Demo access
+
+Open the app and choose a role:
 
 - Super Admin
 - College Admin
@@ -50,10 +114,42 @@ The current portfolio build includes demo sessions for:
 - Student
 - Parent
 
-The authentication layer is intentionally a demo implementation for portfolio use. It must be replaced with production authentication before handling real institutional data.
+The landing page uses **explicit demo authentication**. It does not pretend that Google/Microsoft SSO or production identity infrastructure is configured.
+
+## FastAPI backend
+
+The API lives in `apps/api/main.py`.
+
+Implemented demo endpoints include:
+
+- `/health`
+- `/auth/login`
+- `/auth/refresh`
+- `/auth/logout`
+- `/auth/me`
+- `/dashboard/stats`
+- `/students` CRUD
+- `/faculty`
+- `/attendance`
+- `/attendance/bulk`
+- `/exams`
+- `/assignments`
+- assignment submission
+- `/fees`
+- fee payment simulation
+- `/notices`
+- `/library/books`
+- library issue / return
+- `/reports`
+- admin colleges / users / analytics
+- settings
+- explainable risk analytics
+
+The API is intentionally **in-memory** for this portfolio build. Restarting it resets server-side demo mutations.
 
 ## Tech stack
 
+### Web
 - Next.js 14
 - React 18
 - TypeScript
@@ -62,9 +158,21 @@ The authentication layer is intentionally a demo implementation for portfolio us
 - Axios
 - Lucide React
 
+### API
+- FastAPI
+- Pydantic
+- Pytest
+- Uvicorn
+
+### Quality
+- GitHub Actions
+- TypeScript typecheck
+- Next.js production build
+- API smoke tests
+
 ## Run locally
 
-### Web
+### 1. Web app
 
 From the repository root:
 
@@ -73,73 +181,106 @@ npm --prefix apps/web install
 npm run dev:web
 ```
 
-Then open the local Next.js URL shown in the terminal.
+Open:
 
-### API
+```text
+http://localhost:3000
+```
 
-Create a Python environment, install the API dependencies, then run:
+### 2. FastAPI demo
+
+Create a Python environment, then:
 
 ```bash
 pip install -r apps/api/requirements.txt
 npm run dev:api
 ```
 
-The FastAPI docs are available at `http://localhost:8000/docs`.
+API docs:
 
-## Quality checks
+```text
+http://localhost:8000/docs
+```
+
+Optional web API configuration:
+
+```text
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
+
+## Validate the project
 
 ```bash
+npm --prefix apps/web install
 npm run typecheck:web
 npm run build:web
+pip install -r apps/api/requirements.txt
 npm run test:api
 ```
 
-A GitHub Actions workflow is included so public-repository CI can check the web build automatically.
+The repository also runs these checks automatically through GitHub Actions.
 
-## Free deployment
+## Deployment
 
-The web app is suitable for deployment on Vercel's free tier for portfolio/demo use.
+The web project is suitable for a Vercel portfolio deployment with the project root set to:
 
-The repository already points to:
+```text
+apps/web
+```
 
-`https://edu-one-eta.vercel.app`
+The repository currently records this portfolio URL:
 
-Deployment availability depends on the connected Vercel project and its current configuration.
+```text
+https://edu-one-eta.vercel.app
+```
 
-## Important production note
-
-EDU_ONE is a portfolio/demo system. Before using it with real student or institutional data, production work would still be required for:
-
-- secure server-side authentication
-- encrypted secrets
-- tenant isolation
-- a persistent database
-- authorization enforcement on the backend
-- audit logging
-- file-storage security
-- payment-provider integration
-- privacy and retention policies
-- backups and disaster recovery
-
-Keeping those boundaries explicit is considerably more credible than claiming a demo is magically enterprise-ready because the gradient looks expensive.
+The API can be run locally or deployed separately to any compatible Python host. A deployed web app can point to it through `NEXT_PUBLIC_API_URL`.
 
 ## Project structure
 
 ```text
 EDU_ONE/
+├── .github/
+│   └── workflows/
+│       └── web-ci.yml
 ├── apps/
 │   ├── api/
 │   │   ├── main.py
+│   │   ├── requirements.txt
 │   │   └── test_main.py
-│   ├── web/
-│   │   ├── app/
-│   │   ├── components/
-│   │   └── lib/
-│   └── api/
+│   └── web/
+│       ├── app/
+│       │   ├── admin/
+│       │   ├── dashboard/
+│       │   └── modules/
+│       ├── components/
+│       └── lib/
+│           ├── auth-store.ts
+│           ├── demo-data.ts
+│           ├── edu-store.ts
+│           ├── platform-store.ts
+│           └── api.ts
 ├── package.json
-└── package-lock.json
+└── LICENSE
 ```
 
-## Portfolio summary
+## Production boundary
 
-> Built a responsive multi-role college operating-system interface with academic, attendance, exam, assignment, fee, library, reporting, and explainable student-risk analytics workflows using Next.js, TypeScript, Tailwind CSS, and Zustand.
+Before using EDU_ONE with real institutional data, at minimum add:
+
+1. server-side authentication and authorization
+2. real database persistence with migrations
+3. strict tenant isolation
+4. audit logging
+5. encrypted secret management
+6. secure document/file storage
+7. rate limiting and abuse controls
+8. payment-provider integration and webhooks
+9. privacy, retention and consent policies
+10. automated backups and disaster recovery
+11. observability and error monitoring
+12. security review and penetration testing
+
+## License
+
+MIT
