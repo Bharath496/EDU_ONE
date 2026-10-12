@@ -1,279 +1,161 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useState } from 'react'
-import { cn } from '@/lib/utils'
-import { Badge } from '@/components/ui/Badge'
-import { Avatar, AvatarGroup } from '@/components/ui/Avatar'
-import { Dropdown, DropdownMenu, DropdownItem, DropdownDivider } from '@/components/ui/Dropdown'
+import { usePathname, useRouter } from 'next/navigation'
+import { ChevronLeft, ChevronRight, LogOut, X } from 'lucide-react'
+import { Avatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
+import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/lib/auth-store'
-import { getWorkspaceNavigation, getQuickActions } from '@/lib/navigation'
-import { CommandPalette } from '@/components/ui/CommandPalette'
-import {
-  LayoutDashboard,
-  Users,
-  GraduationCap,
-  UserCheck,
-  CalendarCheck,
-  ClipboardList,
-  FilePen,
-  Library,
-  IndianRupee,
-  Megaphone,
-  FileText,
-  Settings,
-  Building2,
-  Shield,
-  CreditCard,
-  BarChart3,
-  ChevronRight,
-  ChevronLeft,
-  Menu,
-  X,
-  Plus,
-  Search,
-  Bell,
-  MessageSquare,
-  User,
-  LogOut,
-  BookOpen,
-  Award,
-  Bookmark,
-  HelpCircle,
-  GraduationCap as GradCap,
-  Settings as SettingsIcon,
-} from 'lucide-react'
-
-const NAV_ICONS: Record<string, React.ElementType> = {
-  Dashboard: LayoutDashboard,
-  Students: GraduationCap,
-  Faculty: UserCheck,
-  Attendance: CalendarCheck,
-  Exams: ClipboardList,
-  Assignments: FilePen,
-  Library: Library,
-  Fees: IndianRupee,
-  Notices: Megaphone,
-  Reports: FileText,
-  Settings: SettingsIcon,
-  'Admin Console': Shield,
-  Colleges: Building2,
-  Users: Users,
-  Billing: CreditCard,
-  Analytics: BarChart3,
-  'My Classes': BookOpen,
-  Marks: Award,
-  LMS: Library,
-  'Super Admin Dashboard': Shield,
-  'College Management': Building2,
-  'User Management': Users,
-  'Role & Permission': Shield,
-  'System Settings': SettingsIcon,
-  'Platform Analytics': BarChart3,
-}
+import { getQuickActions, getWorkspaceNavigation } from '@/lib/navigation'
 
 interface SidebarProps {
   isOpen: boolean
   onClose: () => void
-  onToggleCollapse?: () => void
-  collapsed?: boolean
+  onToggleCollapse: () => void
+  collapsed: boolean
 }
 
-export function Sidebar({ isOpen, onClose, onToggleCollapse, collapsed = false }: SidebarProps) {
-  const { user, isAuthenticated } = useAuthStore()
+export function Sidebar({ isOpen, onClose, onToggleCollapse, collapsed }: SidebarProps) {
   const pathname = usePathname()
-  const [hovered, setHovered] = useState(false)
+  const router = useRouter()
+  const { user, clearAuth } = useAuthStore()
 
-  if (!isAuthenticated || !user) return null
+  if (!user) return null
 
-  const navItems = getWorkspaceNavigation(user.role)
+  const navigation = getWorkspaceNavigation(user.role)
   const quickActions = getQuickActions(user.role)
-  const isSuperAdmin = user.role === 'Super Admin'
-  const isCollegeAdmin = user.role === 'College Admin' || user.role === 'Super Admin'
 
-  const getIcon = (iconName: string) => NAV_ICONS[iconName] || LayoutDashboard
+  const signOut = () => {
+    clearAuth()
+    onClose()
+    router.push('/')
+  }
 
   return (
     <>
-      <div
-        className={cn(
-          'fixed inset-0 z-40 bg-black/30 backdrop-blur-sm lg:hidden transition-opacity',
-          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        )}
-        onClick={onClose}
-        aria-hidden="true"
-      />
+      {isOpen && (
+        <button
+          aria-label="Close navigation overlay"
+          className="fixed inset-0 z-40 bg-slate-950/45 backdrop-blur-[1px] lg:hidden"
+          onClick={onClose}
+        />
+      )}
+
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 w-64 transform bg-white border-r border-slate-200 transition-transform duration-300 ease-in-out flex flex-col',
+          'fixed inset-y-0 left-0 z-50 flex flex-col border-r border-slate-200 bg-white transition-all duration-300',
           collapsed ? 'w-20' : 'w-72',
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
       >
-        <div className={cn('flex h-16 items-center justify-between px-4 border-b border-slate-100', collapsed && 'justify-center')}>
+        <div className={cn('flex h-16 items-center border-b border-slate-100', collapsed ? 'justify-center px-2' : 'justify-between px-4')}>
+          <Link href="/dashboard" className="flex min-w-0 items-center gap-3" onClick={onClose}>
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary-600 text-lg font-bold text-white">
+              E
+            </div>
+            {!collapsed && (
+              <div className="min-w-0">
+                <p className="truncate font-bold tracking-tight text-slate-950">EDU_ONE</p>
+                <p className="truncate text-[11px] text-slate-400">College OS Demo</p>
+              </div>
+            )}
+          </Link>
           {!collapsed && (
-            <Link href="/dashboard" className="flex items-center gap-3" onClick={onClose}>
-              <div className="w-8 h-8 rounded-xl bg-primary-600 flex items-center justify-center">
-                <span className="text-white font-bold text-lg">E</span>
-              </div>
-              <span className="font-semibold text-xl text-slate-900">EduOne</span>
-            </Link>
+            <Button variant="ghost" size="icon" className="lg:hidden" onClick={onClose} aria-label="Close navigation">
+              <X className="h-5 w-5" />
+            </Button>
           )}
-          {collapsed && (
-            <Link href="/dashboard" className="flex items-center justify-center" onClick={onClose}>
-              <div className="w-8 h-8 rounded-xl bg-primary-600 flex items-center justify-center">
-                <span className="text-white font-bold text-lg">E</span>
-              </div>
-            </Link>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-3 py-4">
+          {!collapsed && (
+            <p className="mb-2 px-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+              Workspace
+            </p>
           )}
+          <nav className="space-y-1">
+            {navigation.map((item) => {
+              const Icon = item.icon
+              const active = pathname === item.href || pathname.startsWith(item.href + '/')
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={onClose}
+                  title={collapsed ? item.label : undefined}
+                  className={cn(
+                    'flex items-center rounded-xl text-sm font-medium transition-colors',
+                    collapsed ? 'justify-center px-2 py-3' : 'gap-3 px-3 py-2.5',
+                    active
+                      ? 'bg-primary-50 text-primary-700'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950'
+                  )}
+                >
+                  <Icon className={cn('h-5 w-5 shrink-0', active && 'text-primary-600')} />
+                  {!collapsed && <span className="truncate">{item.label}</span>}
+                </Link>
+              )
+            })}
+          </nav>
+
+          {quickActions.length > 0 && (
+            <div className="mt-6 border-t border-slate-100 pt-4">
+              {!collapsed && (
+                <p className="mb-2 px-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+                  Quick actions
+                </p>
+              )}
+              <div className="space-y-1">
+                {quickActions.slice(0, 4).map((action) => (
+                  <Link
+                    key={action.href + action.label}
+                    href={action.href}
+                    onClick={onClose}
+                    title={collapsed ? action.label : undefined}
+                    className={cn(
+                      'flex items-center rounded-xl text-sm text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900',
+                      collapsed ? 'justify-center px-2 py-3' : 'gap-3 px-3 py-2'
+                    )}
+                  >
+                    <action.icon className="h-4.5 w-4.5 shrink-0" />
+                    {!collapsed && <span className="truncate">{action.label}</span>}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="border-t border-slate-100 p-3">
+          {!collapsed ? (
+            <div className="rounded-2xl bg-slate-50 p-3">
+              <div className="flex items-center gap-3">
+                <Avatar name={user.name} size="sm" src={user.avatar} status="online" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-slate-900">{user.name}</p>
+                  <p className="truncate text-xs text-slate-500">{user.role}</p>
+                </div>
+                <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sign out">
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex justify-center">
+              <Avatar name={user.name} size="sm" src={user.avatar} status="online" />
+            </div>
+          )}
+
           <Button
             variant="ghost"
-            size="icon"
-            className="lg:hidden"
-            onClick={onClose}
-            aria-label="Close sidebar"
-          >
-            <X className="w-5 h-5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hidden lg:flex"
+            size="sm"
+            className={cn('mt-2 hidden w-full text-slate-500 lg:flex', collapsed ? 'justify-center px-0' : 'justify-between')}
             onClick={onToggleCollapse}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
-            {collapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
-          </Button>
-        </div>
-
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1" role="navigation" aria-label="Main navigation">
-          {isSuperAdmin && (
-            <div className="mb-2">
-              <h3 className={cn('px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider', collapsed && 'hidden')}>
-                Platform Admin
-              </h3>
-              <div className="space-y-1">
-                {[
-                  { href: '/admin', icon: 'Shield', label: 'Admin Console', desc: 'Platform controls' },
-                  { href: '/admin/colleges', icon: 'Building2', label: 'Colleges', desc: 'Manage institutions' },
-                  { href: '/admin/users', icon: 'Users', label: 'Users', desc: 'Platform users' },
-                  { href: '/admin/billing', icon: 'CreditCard', label: 'Billing', desc: 'Subscriptions' },
-                  { href: '/admin/analytics', icon: 'BarChart3', label: 'Analytics', desc: 'Platform metrics' },
-                  { href: '/admin/settings', icon: 'Settings', label: 'System Settings', desc: 'Global config' },
-                ].map((item) => {
-                  const Icon = getIcon(item.icon)
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={onClose}
-                      className={cn(
-                        'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors',
-                        pathname === item.href || pathname.startsWith(item.href + '/')
-                          ? 'bg-primary-50 text-primary-700'
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900',
-                        collapsed && 'justify-center px-2'
-                      )}
-                      title={collapsed ? item.label : undefined}
-                    >
-                      <Icon className="w-5 h-5 flex-shrink-0" />
-                      {!collapsed && (
-                        <div className="flex-1 min-w-0">
-                          <span className="truncate block">{item.label}</span>
-                          <span className="text-xs text-slate-500 truncate block">{item.desc}</span>
-                        </div>
-                      )}
-                    </Link>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          <div className={cn('mb-2', !isSuperAdmin && 'mt-2')}>
-            <h3 className={cn('px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider', collapsed && 'hidden')}>
-              {isSuperAdmin ? 'Modules' : 'Main Navigation'}
-            </h3>
-            <div className="space-y-1">
-              {navItems
-                .filter((item) => !['/admin', '/admin/colleges', '/admin/users', '/admin/billing', '/admin/analytics', '/admin/settings'].includes(item.href))
-                .map((item) => {
-                  const Icon = item.icon
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={onClose}
-                      className={cn(
-                        'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors',
-                        pathname === item.href || pathname.startsWith(item.href + '/')
-                          ? 'bg-primary-50 text-primary-700'
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900',
-                        collapsed && 'justify-center px-2'
-                      )}
-                      title={collapsed ? item.label : undefined}
-                    >
-                      <Icon className="w-5 h-5 flex-shrink-0" />
-                      {!collapsed && (
-                        <div className="flex-1 min-w-0">
-                          <span className="truncate block">{item.label}</span>
-                          <span className="text-xs text-slate-500 truncate block">{item.description}</span>
-                        </div>
-                      )}
-                    </Link>
-                  )
-                })}
-            </div>
-          </div>
-
-          {isCollegeAdmin && (
-            <>
-              <div className="pt-4 pb-2 px-3">
-                <h3 className={cn('text-xs font-semibold text-slate-500 uppercase tracking-wider', collapsed && 'hidden')}>Quick Actions</h3>
-              </div>
-              {quickActions.slice(0, 4).map((action) => (
-                <Link
-                  key={action.href}
-                  href={action.href}
-                  className={cn(
-                    'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors',
-                    collapsed && 'justify-center px-2'
-                  )}
-                  onClick={onClose}
-                  title={collapsed ? action.label : undefined}
-                >
-                  <action.icon className="w-5 h-5 flex-shrink-0" />
-                  {!collapsed && <span className="truncate">{action.label}</span>}
-                </Link>
-              ))}
-            </>
-          )}
-        </nav>
-
-        <div className={cn('p-3 border-t border-slate-100', collapsed && 'hidden')}>
-          <Link
-            href="/modules/settings"
-            onClick={onClose}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
-          >
-            <SettingsIcon className="w-5 h-5 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <span className="truncate block">Settings</span>
-              <span className="text-xs text-slate-500 truncate block">Preferences & config</span>
-            </div>
-          </Link>
-        </div>
-
-        <div className={cn('p-3 border-t border-slate-100', collapsed && 'hidden')}>
-          <Button
-            variant="ghost"
-            className="w-full justify-start px-3 py-2.5 rounded-xl"
-            onClick={() => { useAuthStore.getState().clearAuth(); onClose(); }}
-          >
-            <LogOut className="w-5 h-5 text-red-600" />
-            <span className="ml-3 text-red-600 font-medium">Sign Out</span>
+            {!collapsed && <span>Collapse</span>}
+            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </Button>
         </div>
       </aside>
