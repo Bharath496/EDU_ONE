@@ -62,7 +62,7 @@ export default function FeesPage() {
 
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('All')
-  const canManage = user?.role === 'College Admin'
+  const canManage = user?.role === 'College Admin' || user?.role === 'Staff'
   const canPay = canManage || user?.role === 'Student' || user?.role === 'Parent'
   const matchedStudent =
     students.find((student) => student.name.toLowerCase() === user?.name.toLowerCase()) ??
