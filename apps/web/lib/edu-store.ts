@@ -109,10 +109,29 @@ export const useEduStore = create<EduState>()(
             date,
             records,
           }
+          const attendanceSessions = existing
+            ? state.attendanceSessions.map((item) => (item.id === existing.id ? nextSession : item))
+            : [nextSession, ...state.attendanceSessions]
+
+          const students = state.students.map((student) => {
+            const statuses = attendanceSessions
+              .map((session) => session.records[student.id])
+              .filter(Boolean)
+            if (!statuses.length) return student
+            const earned = statuses.reduce((sum, status) => {
+              if (status === 'present' || status === 'excused') return sum + 1
+              if (status === 'late') return sum + 0.8
+              return sum
+            }, 0)
+            return {
+              ...student,
+              attendance: Math.round((earned / statuses.length) * 100),
+            }
+          })
+
           return {
-            attendanceSessions: existing
-              ? state.attendanceSessions.map((item) => (item.id === existing.id ? nextSession : item))
-              : [nextSession, ...state.attendanceSessions],
+            attendanceSessions,
+            students,
             activity: [activity('Attendance saved', `${course} • ${date}`), ...state.activity].slice(0, 50),
           }
         }),
