@@ -29,7 +29,7 @@ export default function NoticesPage() {
   const [search, setSearch] = useState('')
   const [priority, setPriority] = useState('All')
   const [open, setOpen] = useState(false)
-  const canPublish = user?.role === 'College Admin' || user?.role === 'Faculty'
+  const canPublish = user?.role === 'College Admin' || user?.role === 'Faculty' || user?.role === 'Staff'
   const visibleNotices =
     user?.role === 'Student' || user?.role === 'Parent'
       ? notices.filter((notice) => notice.target !== 'Faculty')
