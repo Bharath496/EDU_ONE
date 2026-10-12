@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_IN',
-    url: 'https://edu-one-eta.vercel.app',
+    url: 'https://bharath496.github.io/EDU_ONE/',
     title: 'EDU_ONE | College Operating System Demo',
     description: 'Interactive multi-role college operations portfolio project built with Next.js, TypeScript and FastAPI.',
     siteName: 'EDU_ONE',
