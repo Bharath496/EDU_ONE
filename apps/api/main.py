@@ -58,6 +58,17 @@ async def require_explicit_demo_mode(request: Request, call_next):
     return await call_next(request)
 
 
+@app.middleware("http")
+async def add_security_response_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "no-referrer")
+    if request.url.path.startswith("/v1/"):
+        response.headers["Cache-Control"] = "no-store"
+    return response
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
