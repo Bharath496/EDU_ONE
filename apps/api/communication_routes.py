@@ -215,8 +215,6 @@ def _ticket_access(principal: AuthPrincipal, ticket: GrievanceTicket, db: Sessio
         )
     except AuthorizationError as exc:
         raise HTTPException(status_code=403, detail="You cannot access this support ticket") from exc
-    if ticket.created_by not in {principal.user.id, profile.user_id} and "Parent" not in principal.roles:
-        raise HTTPException(status_code=403, detail="You cannot access this support ticket")
     return profile
 
 
