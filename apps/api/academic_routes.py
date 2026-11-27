@@ -371,14 +371,16 @@ def mark_attendance(
     )).all())
     if enrolled != set(student_ids):
         raise HTTPException(status_code=422, detail="Attendance can only be marked for active students enrolled in this course")
-    existing = set(db.scalars(select(AttendanceRecord.student_profile_id).where(
+    existing_rows = db.scalars(select(AttendanceRecord).where(
         AttendanceRecord.session_id == session.id,
         AttendanceRecord.student_profile_id.in_(student_ids),
-    )).all())
-    if existing:
-        raise HTTPException(status_code=409, detail="Attendance already exists for one or more students in this session")
-
+    )).all()
+    existing_statuses = {row.student_profile_id: row.status for row in existing_rows}
     for item in payload.records:
+        if item.student_profile_id in existing_statuses and existing_statuses[item.student_profile_id] != item.status:
+            raise HTTPException(status_code=409, detail="A previously saved attendance status conflicts with this retry")
+    new_records = [item for item in payload.records if item.student_profile_id not in existing_statuses]
+    for item in new_records:
         db.add(AttendanceRecord(
             institution_id=principal.institution.id,
             session_id=session.id,
@@ -387,20 +389,21 @@ def mark_attendance(
             remarks=item.remarks,
             marked_by=principal.user.id,
         ))
-    db.add(AuditEvent(
-        institution_id=principal.institution.id,
-        actor_user_id=principal.user.id,
-        action="attendance.records.marked",
-        resource_type="attendance_session",
-        resource_id=session.id,
-        details={"count": len(payload.records), "course_id": course.id},
-    ))
+    if new_records:
+        db.add(AuditEvent(
+            institution_id=principal.institution.id,
+            actor_user_id=principal.user.id,
+            action="attendance.records.marked",
+            resource_type="attendance_session",
+            resource_id=session.id,
+            details={"count": len(new_records), "course_id": course.id},
+        ))
     try:
         db.commit()
     except IntegrityError as exc:
         db.rollback()
         raise HTTPException(status_code=409, detail="Attendance records conflict with an existing submission") from exc
-    return {"session_id": session.id, "created": len(payload.records)}
+    return {"session_id": session.id, "created": len(new_records), "already_saved": not new_records}
 
 
 @attendance_router.post("/sessions/{session_id}/lock")
