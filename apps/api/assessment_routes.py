@@ -24,6 +24,7 @@ from models import (
     Exam,
     ExamResult,
     StudentProfile,
+    User,
 )
 
 exam_router = APIRouter(prefix="/v1/exams", tags=["exams"])
