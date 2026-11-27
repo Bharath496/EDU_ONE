@@ -37,9 +37,9 @@ export default function AlertsPage() {
   const [filter, setFilter] = useState('all')
   const [readIds, setReadIds] = useState<string[]>([])
   const canViewAll = user?.role === 'College Admin' || user?.role === 'Faculty' || user?.role === 'Super Admin'
-  const matchedStudent =
-    students.find((student) => student.name.toLowerCase() === user?.name.toLowerCase()) ??
-    students[0]
+  const matchedStudent = user?.studentId
+    ? students.find((student) => student.id === user.studentId)
+    : undefined
   const scopedStudents = canViewAll ? students : matchedStudent ? [matchedStudent] : []
   const scopedFees = canViewAll
     ? fees
