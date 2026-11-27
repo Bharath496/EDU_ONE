@@ -11,7 +11,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from auth_routes import AuthPrincipal, get_current_principal
-from authorization import AuthorizationError, authorize
+from authorization import AuthorizationError, ROLE_PERMISSIONS, authorize
 from database import get_db
 from models import (
     Announcement, AnnouncementRead, AuditEvent, GrievanceMessage,
@@ -196,6 +196,10 @@ def mark_announcement_read(
     return {"announcement_id": item.id, "is_read": True}
 
 
+def _has_support_management(principal: AuthPrincipal) -> bool:
+    return any("support.manage" in ROLE_PERMISSIONS.get(role, frozenset()) for role in principal.roles)
+
+
 def _ticket_access(principal: AuthPrincipal, ticket: GrievanceTicket, db: Session) -> StudentProfile:
     profile = db.scalar(select(StudentProfile).where(
         StudentProfile.id == ticket.student_profile_id,
@@ -203,7 +207,7 @@ def _ticket_access(principal: AuthPrincipal, ticket: GrievanceTicket, db: Sessio
     ))
     if profile is None:
         raise HTTPException(status_code=404, detail="Student profile not found")
-    if "support.manage" in principal.access_context.roles:
+    if _has_support_management(principal):
         return profile
     try:
         authorize(
@@ -294,7 +298,7 @@ def list_tickets(
     status_filter: str | None = Query(default=None, alias="status"),
 ) -> list[dict]:
     query = select(GrievanceTicket).where(GrievanceTicket.institution_id == principal.institution.id)
-    if "support.manage" not in principal.access_context.roles:
+    if not _has_support_management(principal):
         student_ids = _student_scope_ids(principal)
         if not student_ids:
             raise HTTPException(status_code=403, detail="You do not have access to support tickets")
@@ -335,7 +339,7 @@ def add_ticket_message(
     if ticket is None:
         raise HTTPException(status_code=404, detail="Support ticket not found")
     _ticket_access(principal, ticket, db)
-    if ticket.status in {"resolved", "closed"} and "support.manage" not in principal.access_context.roles:
+    if ticket.status in {"resolved", "closed"} and not _has_support_management(principal):
         raise HTTPException(status_code=409, detail="This ticket is closed for new messages")
     message = GrievanceMessage(
         institution_id=principal.institution.id,
