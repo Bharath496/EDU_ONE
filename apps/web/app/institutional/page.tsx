@@ -120,6 +120,7 @@ export default function InstitutionalWorkspacePage() {
             <Link href="/institutional/timetable" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Timetable & calendar</Link>
             <Link href="/institutional/announcements" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Announcements</Link>
             {['Student', 'Faculty', 'Exam Cell', 'College Admin', 'HOD', 'Class Advisor'].includes(user?.role || '') && <Link href="/institutional/academics" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Academics</Link>}
+            {['College Admin', 'Principal', 'Vice Principal', 'HOD', 'Class Advisor', 'Exam Cell', 'Placement Officer', 'Admissions'].includes(user?.role || '') && <Link href="/institutional/analytics" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Student analytics</Link>}
             {['Faculty', 'College Admin', 'HOD', 'Class Advisor'].includes(user?.role || '') && <Link href="/institutional/attendance" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Mark attendance</Link>}
             <Button variant="outline" onClick={signOut} className="gap-2"><LogOut className="h-4 w-4" /> Sign out</Button>
           </div>
