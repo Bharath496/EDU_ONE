@@ -507,6 +507,11 @@ class ApiClient {
     return response.data
   }
 
+  async getCourseStudents(courseId: string) {
+    const response = await this.client.get(`/v1/academics/courses/${courseId}/students`)
+    return response.data
+  }
+
   getClient(): AxiosInstance {
     return this.client
   }
