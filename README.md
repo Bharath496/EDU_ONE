@@ -472,3 +472,6 @@ The institutional workspace includes a live student view for profile, attendance
 
 
 The Accounts workspace supports student-linked invoice creation and a pending-payment verification queue. Payment references remain unverified until an Accounts user or College Admin explicitly verifies them; the application does not initiate UPI/bank transfers or claim that a student has paid merely because a request was submitted.
+
+
+The live Library screen lets Librarians/College Admins add catalogue items, issue available copies to enrolled student profiles and record returns; students can view their own loan history. Overdue fines are calculated and recorded on return but are not automatically collected.
