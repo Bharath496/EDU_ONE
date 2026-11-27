@@ -318,3 +318,44 @@ class FeePayment(Base):
     verified_by: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
     verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class LibraryBook(Base):
+    __tablename__ = "library_books"
+    __table_args__ = (
+        UniqueConstraint("institution_id", "isbn", name="uq_library_book_tenant_isbn"),
+        CheckConstraint("total_copies >= 0 AND available_copies >= 0 AND available_copies <= total_copies", name="ck_library_book_copy_counts"),
+        Index("ix_library_books_tenant_title", "institution_id", "title"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    institution_id: Mapped[str] = mapped_column(ForeignKey("institutions.id", ondelete="RESTRICT"), nullable=False)
+    isbn: Mapped[str] = mapped_column(String(20), nullable=False)
+    title: Mapped[str] = mapped_column(String(220), nullable=False)
+    author: Mapped[str] = mapped_column(String(180), nullable=False)
+    category: Mapped[str | None] = mapped_column(String(80))
+    publisher: Mapped[str | None] = mapped_column(String(160))
+    total_copies: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    available_copies: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class LibraryLoan(Base):
+    __tablename__ = "library_loans"
+    __table_args__ = (
+        Index("ix_library_loans_tenant_student_due", "institution_id", "student_profile_id", "due_date"),
+        CheckConstraint("fine_amount >= 0", name="ck_library_loan_fine_nonnegative"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    institution_id: Mapped[str] = mapped_column(ForeignKey("institutions.id", ondelete="RESTRICT"), nullable=False)
+    book_id: Mapped[str] = mapped_column(ForeignKey("library_books.id", ondelete="RESTRICT"), nullable=False)
+    student_profile_id: Mapped[str] = mapped_column(ForeignKey("student_profiles.id", ondelete="RESTRICT"), nullable=False)
+    issued_by: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    returned_by: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    issued_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+    due_date: Mapped[date] = mapped_column(Date, nullable=False)
+    returned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="issued")
+    fine_amount: Mapped[float] = mapped_column(Numeric(8, 2), nullable=False, default=0)
