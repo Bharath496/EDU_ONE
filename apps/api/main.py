@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from auth_routes import router as institutional_auth_router
+from student_routes import router as student_router
 
 
 app = FastAPI(
@@ -60,6 +61,7 @@ app.add_middleware(
 )
 
 app.include_router(institutional_auth_router)
+app.include_router(student_router)
 
 
 Role = Literal["Super Admin", "College Admin", "Faculty", "Student", "Parent", "Staff"]
