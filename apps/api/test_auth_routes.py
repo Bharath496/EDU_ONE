@@ -13,7 +13,9 @@ from security import hash_password
 
 
 @pytest.fixture
-def auth_client():
+def auth_client(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("JWT_SECRET_KEY", "test-only-secret-key-with-at-least-32-bytes")
+    monkeypatch.setenv("COOKIE_SECURE", "true")
     engine = create_engine(
         "sqlite+pysqlite:///:memory:",
         connect_args={"check_same_thread": False},
