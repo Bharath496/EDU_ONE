@@ -19,6 +19,13 @@ type TimetableSlot = {
   room: string | null
 }
 
+type LinkedTimetable = {
+  student_profile_id: string
+  student_name: string | null
+  registration_number: string
+  slots: TimetableSlot[]
+}
+
 type CalendarEvent = {
   id: string
   title: string
@@ -52,6 +59,7 @@ export default function InstitutionalTimetablePage() {
   const router = useRouter()
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore()
   const [slots, setSlots] = useState<TimetableSlot[]>([])
+  const [linkedTimetables, setLinkedTimetables] = useState<LinkedTimetable[]>([])
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -67,7 +75,9 @@ export default function InstitutionalTimetablePage() {
         ? api.getMyTimetable()
         : user.role === 'Faculty'
           ? api.getFacultyTimetable()
-          : Promise.resolve([]),
+          : user.role === 'Parent'
+            ? api.getLinkedStudentTimetables()
+            : Promise.resolve([]),
     ])
 
     if (calendarResult.status === 'fulfilled') {
@@ -78,9 +88,16 @@ export default function InstitutionalTimetablePage() {
     }
 
     if (timetableResult.status === 'fulfilled') {
-      setSlots(timetableResult.value as TimetableSlot[])
+      if (user.role === 'Parent') {
+        setLinkedTimetables(timetableResult.value as LinkedTimetable[])
+        setSlots([])
+      } else {
+        setSlots(timetableResult.value as TimetableSlot[])
+        setLinkedTimetables([])
+      }
     } else {
       setSlots([])
+      setLinkedTimetables([])
       setError((current) => current || 'Your timetable could not be loaded. Your account may not have an active class or course assignment yet.')
     }
     setLoading(false)
@@ -101,6 +118,7 @@ export default function InstitutionalTimetablePage() {
   if (!isAuthenticated || !user) return null
 
   const canViewTimetable = user.role === 'Student' || user.role === 'Faculty'
+  const canViewLinkedTimetable = user.role === 'Parent'
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -156,6 +174,25 @@ export default function InstitutionalTimetablePage() {
                   </Card>
                 )
               })}
+            </div>
+          ) : canViewLinkedTimetable ? (
+            <div className="grid gap-4 md:grid-cols-2">
+              {linkedTimetables.length ? linkedTimetables.map((child) => (
+                <Card key={child.student_profile_id}>
+                  <CardHeader>
+                    <CardTitle className="text-base">{child.student_name || 'Linked student'}</CardTitle>
+                    <CardDescription>{child.registration_number} · verified linked account</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {child.slots.length ? child.slots.slice().sort((a, b) => a.weekday - b.weekday || a.start_time.localeCompare(b.start_time)).map((slot) => (
+                      <div key={slot.id} className="rounded-xl bg-slate-50 p-3">
+                        <p className="font-semibold text-slate-900">{slot.course_title || slot.course_code || 'Course'}</p>
+                        <p className="mt-1 text-xs text-slate-500">{WEEKDAYS[slot.weekday]} · {slot.start_time}–{slot.end_time}{slot.room ? ` · ${slot.room}` : ''}</p>
+                      </div>
+                    )) : <p className="text-sm text-slate-500">No active timetable slots for this student.</p>}
+                  </CardContent>
+                </Card>
+              )) : <Card><CardContent className="p-5 text-sm text-slate-600">No verified student links are available for this parent account.</CardContent></Card>}
             </div>
           ) : (
             <Card><CardContent className="p-5 text-sm text-slate-600">Your role can view institution calendar events. A personal timetable view is not enabled for this role yet.</CardContent></Card>
