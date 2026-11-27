@@ -172,9 +172,11 @@ def get_current_principal(
 @router.post("/login")
 def login(
     payload: LoginPayload,
+    request: Request,
     response: Response,
     db: Annotated[Session, Depends(get_db)],
 ) -> dict:
+    _require_trusted_origin(request)
     institution = db.scalar(select(Institution).where(Institution.code == payload.institution_code.strip().upper()))
     user = None
     if institution is not None and institution.is_active:
