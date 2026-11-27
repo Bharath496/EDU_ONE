@@ -93,6 +93,7 @@ export default function InstitutionalAnalyticsPage() {
     { key: 'high', label: 'High review priority' },
     { key: 'medium', label: 'Needs review' },
     { key: 'watch', label: 'Monitor' },
+    { key: 'on_track', label: 'No current signal' },
     { key: 'insufficient_data', label: 'Insufficient data' },
   ]
 
