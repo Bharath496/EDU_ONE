@@ -16,6 +16,8 @@ from security import hash_password
 def auth_client(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("JWT_SECRET_KEY", "test-only-secret-key-with-at-least-32-bytes")
     monkeypatch.setenv("COOKIE_SECURE", "true")
+    monkeypatch.setenv("COOKIE_SAMESITE", "none")
+    monkeypatch.setenv("AUTH_ALLOWED_ORIGINS", "https://testserver")
     engine = create_engine(
         "sqlite+pysqlite:///:memory:",
         connect_args={"check_same_thread": False},
@@ -44,7 +46,7 @@ def auth_client(monkeypatch: pytest.MonkeyPatch):
 
     app.dependency_overrides[get_db] = override_get_db
     from fastapi.testclient import TestClient
-    with TestClient(app, base_url="https://testserver") as client:
+    with TestClient(app, base_url="https://testserver", headers={"Origin": "https://testserver"}) as client:
         yield client, user_id
     app.dependency_overrides.clear()
     engine.dispose()
@@ -64,6 +66,7 @@ def test_login_sets_http_only_refresh_cookie_and_returns_short_lived_access_toke
     cookie = response.headers["set-cookie"].lower()
     assert "httponly" in cookie
     assert "secure" in cookie
+    assert "samesite=none" in cookie
 
 
 def test_login_uses_generic_error_for_invalid_credentials(auth_client) -> None:
