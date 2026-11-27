@@ -517,6 +517,31 @@ class ApiClient {
     return response.data
   }
 
+  async getLibraryBooks(params?: { search?: string; page?: number; limit?: number }) {
+    const response = await this.client.get('/v1/library/books', { params })
+    return response.data
+  }
+  async getMyLibraryLoans() {
+    const response = await this.client.get('/v1/library/loans/me')
+    return response.data
+  }
+  async getInstitutionalLibraryLoans(params?: { student_profile_id?: string; active_only?: boolean }) {
+    const response = await this.client.get('/v1/library/loans', { params })
+    return response.data
+  }
+  async createLibraryBook(payload: { isbn: string; title: string; author: string; category?: string; publisher?: string; total_copies: number }) {
+    const response = await this.client.post('/v1/library/books', payload)
+    return response.data
+  }
+  async issueLibraryBook(payload: { book_id: string; student_profile_id: string; due_date: string }) {
+    const response = await this.client.post('/v1/library/loans', payload)
+    return response.data
+  }
+  async returnLibraryBook(loanId: string) {
+    const response = await this.client.post(`/v1/library/loans/${loanId}/return`)
+    return response.data
+  }
+
   getClient(): AxiosInstance {
     return this.client
   }
