@@ -10,7 +10,7 @@ from sqlalchemy.pool import StaticPool
 
 from database import get_db
 from main import app
-from models import AcademicCourse, Base, CourseEnrollment, Institution, StaffAssignment, StudentProfile, User, UserRole
+from models import AcademicCourse, Base, CourseEnrollment, Institution, ParentStudentLink, StaffAssignment, StudentProfile, User, UserRole
 from security import create_access_token
 
 
@@ -35,6 +35,7 @@ def timetable_client(monkeypatch: pytest.MonkeyPatch):
         admin = add_user("admin@time.edu", "College Admin")
         faculty = add_user("faculty@time.edu", "Faculty")
         student = add_user("student@time.edu", "Student")
+        parent = add_user("parent@time.edu", "Parent")
         profile = StudentProfile(
             institution_id=college.id, user_id=student.id, registration_number="T001",
             department_id="dept-ai", semester=5, class_id="class-5a",
@@ -46,12 +47,16 @@ def timetable_client(monkeypatch: pytest.MonkeyPatch):
         db.add_all([profile, course])
         db.flush()
         db.add(CourseEnrollment(institution_id=college.id, course_id=course.id, student_profile_id=profile.id))
+        db.add(ParentStudentLink(
+            institution_id=college.id, parent_user_id=parent.id,
+            student_profile_id=profile.id, is_verified=True,
+        ))
         db.add(StaffAssignment(
             institution_id=college.id, user_id=faculty.id, scope_type="course",
             scope_id=course.id, permission="academics.read",
         ))
         db.commit()
-        ids = {"college": college.id, "admin": admin.id, "faculty": faculty.id, "student": student.id, "profile": profile.id, "course": course.id}
+        ids = {"college": college.id, "admin": admin.id, "faculty": faculty.id, "student": student.id, "parent": parent.id, "profile": profile.id, "course": course.id}
 
     def override_get_db():
         with Session(engine) as session:
@@ -106,3 +111,20 @@ def test_calendar_event_is_visible_only_to_targeted_role(timetable_client) -> No
     assert event.status_code == 201
     assert len(client.get("/v1/calendar", headers=headers(ids["student"], "Student")).json()) == 1
     assert client.get("/v1/calendar", headers=headers(ids["faculty"], "Faculty")).json() == []
+
+
+def test_parent_can_read_only_verified_linked_student_timetables(timetable_client) -> None:
+    client, ids, headers = timetable_client
+    admin_headers = headers(ids["admin"], "College Admin")
+    created = client.post("/v1/timetable", headers=admin_headers, json={
+        "class_id": "class-5a", "course_id": ids["course"], "faculty_user_id": ids["faculty"],
+        "weekday": 2, "start_time": "11:00:00", "end_time": "12:00:00",
+        "effective_from": date.today().isoformat(),
+    })
+    assert created.status_code == 201
+    linked = client.get("/v1/timetable/linked", headers=headers(ids["parent"], "Parent"))
+    assert linked.status_code == 200
+    assert len(linked.json()) == 1
+    assert linked.json()[0]["student_profile_id"] == ids["profile"]
+    assert len(linked.json()[0]["slots"]) == 1
+    assert client.get("/v1/timetable/linked", headers=headers(ids["student"], "Student")).status_code == 403
