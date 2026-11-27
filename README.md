@@ -456,3 +456,8 @@ The versioned library API supports a tenant-scoped book catalogue, stock counts,
 ## Announcements and student support
 
 The API supports institution, department, class and role-targeted announcements with per-user read receipts. HODs and class advisors are restricted to their assigned scopes. Student and parent accounts can raise support tickets for their own or verified linked student profiles, exchange messages and follow progress; Support Staff, Principal, Vice Principal and College Admin roles can manage ticket status. Ticket and announcement actions are audited. Attachments, anonymous reporting, SLA automation and external notification delivery are not yet configured.
+
+
+## Timetable and academic calendar
+
+The API includes class timetable slots, faculty assignments, effective dates and overlap checks for both classes and faculty. Students can read their own class timetable, faculty can read their assigned timetable, and staff access is checked against course/class/department scopes. Calendar events can be targeted by role, department or class. These endpoints are live API foundations; a full timetable editor and calendar UI are still to be completed.
