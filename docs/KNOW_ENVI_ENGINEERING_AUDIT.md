@@ -137,3 +137,20 @@ Work has started on `know-envi-rebuild`; `main` remains unchanged. The following
 This is still **not production-ready**. No managed PostgreSQL instance, production secrets, object storage, email/SMS provider, payment gateway, deployment environment, backups or monitoring have been provisioned. The legacy attendance, exams, marks, fees, library, communication, reports, HR, admissions, hostel, transport and analytics routes have not yet been migrated to the new database and authorization layer. Password reset, account lockout/rate limiting, MFA, full session revocation for already-issued access tokens, file malware scanning, privacy/retention workflows, disaster recovery and an independent security review remain open. The existing static GitHub Pages deployment cannot host the FastAPI/PostgreSQL backend.
 
 **Safety rule remains:** do not enable the demo API flag on a public deployment, import real institutional data, or use the current app for attendance decisions, examination records, fee settlement or official college operations until the remaining modules and release gates are implemented and verified.
+
+
+## Implementation progress — 27 November 2026
+
+The development branch now contains a database-backed foundation beyond the original source audit:
+
+- Eight Alembic migrations: tenant-aware identity/audit; courses and attendance; exams, marks and assignments; fee invoices and verified payment records; library catalogue and loans; announcements and grievances; timetable and calendar; placement opportunities and applications.
+- Secure session/authentication foundation with tenant-scoped authorization, role permissions and explicit class/course/department scopes.
+- One-time, fail-closed initial College Admin bootstrap; institution user provisioning; course/class staff assignments; pending parent/student links that require verification.
+- APIs for student profiles, course enrolment/rosters, attendance, exams/results, assignments/submissions, fees/payment verification, library circulation, announcements/read receipts, grievance tickets, timetable/calendar and placement applications.
+- Partial live UI integration: institutional workspace, College Admin user management, staff attendance marking with explicit session locking, and student placement applications.
+
+**Latest API verification:** GitHub Actions run `45954691497` reported 66 passing API tests and successfully applied all eight migrations to the CI SQLite database. The frontend lint step passed; TypeScript checking and production build were still running when this note was prepared. This is CI verification, not a production database test.
+
+**Still not production-ready:** no PostgreSQL instance, secrets, API hosting, payment gateway, private file/object storage, email delivery, MFA, password reset/invitations, robust login rate limiting, browser end-to-end suite, penetration test, load test or full accessibility review has been configured. The new API workflows are not all connected to finished screens; existing demo modules still contain demo/local workflows. Timetable, library, fees, support, exams/results and much of administration need complete UI integration. No real institutional/student data should be loaded until these gaps are closed and a deployment/security review is completed.
+
+The original `main` branch has not been modified or merged. All implementation work remains on `know-envi-rebuild`.
