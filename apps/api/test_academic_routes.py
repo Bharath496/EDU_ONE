@@ -166,3 +166,23 @@ def test_admin_can_create_course_but_student_cannot(academic_client) -> None:
     assert created.status_code == 201
     denied = client.post("/v1/academics/courses", headers=headers(ids["student1"], "Student"), json=payload | {"code": "NEW502"})
     assert denied.status_code == 403
+
+
+
+def test_assigned_faculty_can_list_only_enrolled_course_students(academic_client) -> None:
+    client, ids, headers = academic_client
+    response = client.get(
+        f"/v1/academics/courses/{ids['course']}/students",
+        headers=headers(ids["faculty"], "Faculty"),
+    )
+    assert response.status_code == 200
+    assert {row["id"] for row in response.json()} == {ids["profile1"], ids["profile2"]}
+
+
+def test_student_cannot_browse_course_roster(academic_client) -> None:
+    client, ids, headers = academic_client
+    response = client.get(
+        f"/v1/academics/courses/{ids['course']}/students",
+        headers=headers(ids["student1"], "Student"),
+    )
+    assert response.status_code == 403
