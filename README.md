@@ -446,3 +446,8 @@ The first College Admin is created with the one-time `apps/api/bootstrap_admin.p
 After the first administrator signs in, `/v1/users` can create institution-level accounts for student, parent, faculty, HOD, class advisor, principal, vice principal, Exam Cell, Accounts and other supported staff roles. College Admin and Super Admin cannot be created through this ordinary endpoint. Course/class staff assignments are explicit server-side records. Parent/student relationships start unverified and must be verified by an administrator before parent access is granted.
 
 This initial provisioning workflow sets passwords directly; invitation email, password reset, MFA, self-service account recovery and account lockout/rate limiting are still outstanding. Do not distribute passwords through insecure channels.
+
+
+## Library circulation API
+
+The versioned library API supports a tenant-scoped book catalogue, stock counts, librarian-controlled issue/return workflows, student loan history, active-loan limits and configurable overdue fines (`LIBRARY_FINE_PER_DAY`, default ₹2/day). Only Librarian or College Admin roles can add books, issue or return copies. Students can view their own loan history; they cannot issue or return books themselves. Fine amounts are recorded, not automatically collected.
