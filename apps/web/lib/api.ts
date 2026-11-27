@@ -576,6 +576,15 @@ class ApiClient {
     return response.data
   }
 
+  async getExamResults(examId: string) {
+    const response = await this.client.get(`/v1/exams/${examId}/results`)
+    return response.data
+  }
+  async getAssignmentSubmissions(assignmentId: string) {
+    const response = await this.client.get(`/v1/assignments/${assignmentId}/submissions`)
+    return response.data
+  }
+
   getClient(): AxiosInstance {
     return this.client
   }
