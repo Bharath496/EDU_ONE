@@ -34,7 +34,7 @@ class ApiClient {
       async (error) => {
         const originalRequest = error.config
 
-        if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+        if (error.response?.status === 401 && originalRequest && this.accessToken && !originalRequest._retry) {
           originalRequest._retry = true
 
           try {
@@ -418,6 +418,67 @@ class ApiClient {
   }
   async getInstitutionalFees(params?: { status?: string; page?: number; limit?: number }) {
     const response = await this.client.get('/v1/fees/invoices', { params })
+    return response.data
+  }
+
+  async createInstitutionalCourse(payload: { code: string; title: string; credits: number; department_id?: string; semester: number; class_id?: string }) {
+    const response = await this.client.post('/v1/academics/courses', payload)
+    return response.data
+  }
+  async enrollStudents(courseId: string, studentProfileIds: string[]) {
+    const response = await this.client.post(`/v1/academics/courses/${courseId}/enrollments`, { student_profile_ids: studentProfileIds })
+    return response.data
+  }
+  async createAttendanceSession(payload: { course_id: string; session_date: string; period: number; topic?: string }) {
+    const response = await this.client.post('/v1/attendance/sessions', payload)
+    return response.data
+  }
+  async markAttendance(sessionId: string, records: Array<{ student_profile_id: string; status: 'present' | 'absent' | 'late' | 'excused'; remarks?: string }>) {
+    const response = await this.client.post(`/v1/attendance/sessions/${sessionId}/records`, { records })
+    return response.data
+  }
+  async lockAttendanceSession(sessionId: string) {
+    const response = await this.client.post(`/v1/attendance/sessions/${sessionId}/lock`)
+    return response.data
+  }
+  async createInstitutionalExam(payload: { course_id: string; code: string; title: string; exam_type: 'internal' | 'midterm' | 'final' | 'quiz' | 'practical'; start_at: string; end_at: string; max_marks: number }) {
+    const response = await this.client.post('/v1/exams', payload)
+    return response.data
+  }
+  async publishInstitutionalExam(examId: string) {
+    const response = await this.client.post(`/v1/exams/${examId}/publish`)
+    return response.data
+  }
+  async enterExamResults(examId: string, results: Array<{ student_profile_id: string; marks_obtained: number; grade?: string; remarks?: string }>) {
+    const response = await this.client.post(`/v1/exams/${examId}/results`, { results })
+    return response.data
+  }
+  async publishExamResults(examId: string) {
+    const response = await this.client.post(`/v1/exams/${examId}/publish-results`)
+    return response.data
+  }
+  async createInstitutionalAssignment(payload: { course_id: string; title: string; description: string; due_at: string; max_marks: number }) {
+    const response = await this.client.post('/v1/assignments', payload)
+    return response.data
+  }
+  async submitInstitutionalAssignment(assignmentId: string, content: string) {
+    const response = await this.client.post(`/v1/assignments/${assignmentId}/submissions`, { content })
+    return response.data
+  }
+  async gradeInstitutionalSubmission(submissionId: string, marks_obtained: number, feedback?: string) {
+    const response = await this.client.post(`/v1/assignments/submissions/${submissionId}/grade`, { marks_obtained, feedback })
+    return response.data
+  }
+  async createFeeInvoice(payload: { student_profile_id: string; invoice_number: string; fee_type: string; description?: string; amount: number; due_date: string }) {
+    const response = await this.client.post('/v1/fees/invoices', payload)
+    return response.data
+  }
+  async requestFeePayment(invoiceId: string, payload: { amount: number; method: 'upi' | 'bank_transfer' | 'cash' | 'cheque' | 'dd'; payment_reference?: string }) {
+    const response = await this.client.post(`/v1/fees/invoices/${invoiceId}/payments`, payload)
+    return response.data
+  }
+  async verifyFeePayment(paymentId: string) {
+    const response = await this.client.post(`/v1/fees/payments/${paymentId}/verify`)
     return response.data
   }
 
