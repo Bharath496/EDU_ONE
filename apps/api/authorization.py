@@ -37,7 +37,7 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
     }),
     "Principal": frozenset({
         "students.read", "faculty.read", "academics.read", "attendance.read",
-        "exams.read", "marks.read", "fees.read", "reports.read", "notices.publish",
+        "exams.read", "marks.read", "fees.read", "reports.read", "notices.publish", "support.manage",
     }),
     "Vice Principal": frozenset({
         "students.read", "faculty.read", "academics.read", "attendance.read",
@@ -70,13 +70,14 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
     "Admissions": frozenset({"admissions.manage", "students.read", "reports.read"}),
     "Hostel Warden": frozenset({"hostel.manage", "students.read"}),
     "Transport Coordinator": frozenset({"transport.manage", "students.read"}),
+    "Support Staff": frozenset({"support.manage", "students.read"}),
     "Student": frozenset({
         "students.read", "academics.read", "attendance.read", "exams.read",
-        "marks.read", "assignments.read", "fees.read", "library.read",
+        "marks.read", "assignments.read", "fees.read", "library.read", "support.create",
     }),
     "Parent": frozenset({
         "students.read", "academics.read", "attendance.read", "marks.read",
-        "fees.read", "exams.read",
+        "fees.read", "exams.read", "support.create",
     }),
 }
 
