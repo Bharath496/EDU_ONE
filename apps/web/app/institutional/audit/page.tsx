@@ -59,7 +59,7 @@ export default function InstitutionalAuditPage() {
     if (!authLoading && isAuthenticated && user?.role === 'College Admin') void load()
   }, [authLoading, isAuthenticated, load, user])
 
-  if (authLoading || loading) {
+  if (authLoading || (loading && user?.role === 'College Admin')) {
     return <main className="flex min-h-screen items-center justify-center bg-slate-50 text-sm text-slate-500">Loading audit history...</main>
   }
 
