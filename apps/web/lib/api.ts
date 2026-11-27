@@ -482,6 +482,31 @@ class ApiClient {
     return response.data
   }
 
+  async getPlacementOpportunities(params?: { status?: string }) {
+    const response = await this.client.get('/v1/placements/opportunities', { params })
+    return response.data
+  }
+  async getMyPlacementApplications() {
+    const response = await this.client.get('/v1/placements/applications/me')
+    return response.data
+  }
+  async applyToPlacement(opportunityId: string, application_note?: string) {
+    const response = await this.client.post(`/v1/placements/opportunities/${opportunityId}/apply`, { application_note })
+    return response.data
+  }
+  async createPlacementOpportunity(payload: { company: string; title: string; description: string; location?: string; employment_type: 'full_time' | 'internship' | 'part_time' | 'contract'; eligibility_text?: string; application_deadline: string }) {
+    const response = await this.client.post('/v1/placements/opportunities', payload)
+    return response.data
+  }
+  async getOpportunityApplications(opportunityId: string) {
+    const response = await this.client.get(`/v1/placements/opportunities/${opportunityId}/applications`)
+    return response.data
+  }
+  async updatePlacementApplicationStatus(applicationId: string, status: 'shortlisted' | 'interview' | 'selected' | 'rejected') {
+    const response = await this.client.patch(`/v1/placements/applications/${applicationId}/status`, { status })
+    return response.data
+  }
+
   getClient(): AxiosInstance {
     return this.client
   }
