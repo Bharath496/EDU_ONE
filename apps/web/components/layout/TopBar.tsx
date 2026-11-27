@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button'
 import { CommandPalette } from '@/components/ui/CommandPalette'
 import { Dropdown, DropdownDivider, DropdownItem, DropdownMenu } from '@/components/ui/Dropdown'
 import { useAuthStore } from '@/lib/auth-store'
+import { api } from '@/lib/api'
 import { usePlatformStore } from '@/lib/platform-store'
 import { useEduStore } from '@/lib/edu-store'
 import { getQuickActions, getWorkspaceNavigation } from '@/lib/navigation'
@@ -19,7 +20,7 @@ interface TopBarProps {
 }
 
 export function TopBar({ onMenuClick }: TopBarProps) {
-  const { user, isAuthenticated, clearAuth } = useAuthStore()
+  const { user, token, isAuthenticated, clearAuth } = useAuthStore()
   const router = useRouter()
   const students = useEduStore((state) => state.students)
   const fees = useEduStore((state) => state.fees)
@@ -66,7 +67,10 @@ export function TopBar({ onMenuClick }: TopBarProps) {
 
   const canOpenAlerts = navigation.some((item) => item.href === '/modules/alerts')
 
-  const signOut = () => {
+  const signOut = async () => {
+    if (token && token !== 'demo-session') {
+      try { await api.logout() } catch { /* Local state is cleared even if the server is unreachable. */ }
+    }
     clearAuth()
     router.push('/')
   }
