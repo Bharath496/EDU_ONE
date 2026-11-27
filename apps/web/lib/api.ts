@@ -440,6 +440,35 @@ class ApiClient {
     return response.data
   }
 
+  async getInstitutionalUsers(params?: { role?: string; search?: string; page?: number; limit?: number }) {
+    const response = await this.client.get('/v1/users', { params })
+    return response.data
+  }
+  async createInstitutionalUser(payload: { email: string; full_name: string; password: string; roles: string[]; department_id?: string }) {
+    const response = await this.client.post('/v1/users', payload)
+    return response.data
+  }
+  async updateInstitutionalUserStatus(userId: string, payload: { is_active: boolean; is_locked: boolean }) {
+    const response = await this.client.patch(`/v1/users/${userId}/status`, payload)
+    return response.data
+  }
+  async createStaffAssignment(payload: { user_id: string; scope_type: 'class' | 'course'; scope_id: string; permission: string }) {
+    const response = await this.client.post('/v1/staff-assignments', payload)
+    return response.data
+  }
+  async createParentStudentLink(payload: { parent_user_id: string; student_profile_id: string; relationship_label?: string }) {
+    const response = await this.client.post('/v1/parent-links', payload)
+    return response.data
+  }
+  async verifyParentStudentLink(linkId: string) {
+    const response = await this.client.post(`/v1/parent-links/${linkId}/verify`)
+    return response.data
+  }
+  async createInstitutionalStudentProfile(payload: { user_id: string; registration_number: string; department_id?: string; programme?: string; semester?: number; class_id?: string }) {
+    const response = await this.client.post('/v1/students', payload)
+    return response.data
+  }
+
   getClient(): AxiosInstance {
     return this.client
   }
