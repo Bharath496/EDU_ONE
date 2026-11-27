@@ -430,3 +430,10 @@ The institutional sign-in page is at `/auth/sign-in`. The home page's quick-role
 ## Student profile API
 
 The database-backed student API is available under `/v1/students` and requires a short-lived Bearer access token. It supports tenant-scoped, paginated student lists, profile reads, a student's own profile, admin/admissions creation, admin updates and soft deactivation. Student access is limited to the signed-in student's profile; parent access is limited to verified parent/student links; HOD and class-advisor lists are filtered to assigned departments/classes. Mutations create audit events. Faculty-to-student visibility is intentionally not enabled until course enrolment and teaching assignments are modelled end-to-end.
+
+
+## Courses, attendance, assessments and fees API
+
+The backend now includes versioned, tenant-scoped APIs for course catalogue and enrolments, attendance sessions and records, exams, result entry/publication, assignments and submissions, invoices and payment verification. Faculty actions require course assignments; HOD and class-advisor access is scoped to their department/class; students are restricted to their own enrolled records; parents require a verified student link. Exam results remain hidden until the Exam Cell or College Admin publishes them. Attendance records can be locked after marking.
+
+Fee requests are deliberately **not** treated as successful payments. A student/parent request creates a pending record only. An Accounts user or College Admin must verify it before the invoice balance changes. This is a manual/offline verification workflow, not a payment-gateway integration; no payment provider or webhook is configured. Never treat a client-provided UPI/bank reference as proof of settlement.
