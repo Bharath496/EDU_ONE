@@ -19,6 +19,7 @@ export default function InstitutionalAttendancePage() {
   const [students, setStudents] = useState<Student[]>([])
   const [courseId, setCourseId] = useState('')
   const [sessionId, setSessionId] = useState('')
+  const [attendanceSaved, setAttendanceSaved] = useState(false)
   const [sessionDate, setSessionDate] = useState(new Date().toISOString().slice(0, 10))
   const [period, setPeriod] = useState('1')
   const [topic, setTopic] = useState('')
@@ -76,6 +77,7 @@ export default function InstitutionalAttendancePage() {
         topic: topic || undefined,
       })
       setSessionId(response.id)
+      setAttendanceSaved(false)
       setSuccess('Attendance session created. Mark each student and save.')
     } catch (err: any) {
       setError(err?.response?.data?.detail || 'Could not create the attendance session.')
@@ -98,12 +100,27 @@ export default function InstitutionalAttendancePage() {
         student_profile_id: student.id,
         status: statuses[student.id] as 'present' | 'absent' | 'late' | 'excused',
       })))
-      await api.lockAttendanceSession(sessionId)
-      setSuccess('Attendance saved and the session is locked.')
-      setSessionId('')
-      setStatuses({})
+      setAttendanceSaved(true)
+      setSuccess('Attendance records saved. Lock the session to prevent further changes.')
     } catch (err: any) {
       setError(err?.response?.data?.detail || 'Attendance could not be saved. The open session remains available for retry.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const lockSession = async () => {
+    if (!sessionId || !attendanceSaved) return
+    setSaving(true)
+    setError('')
+    try {
+      await api.lockAttendanceSession(sessionId)
+      setSuccess('Attendance session is locked.')
+      setSessionId('')
+      setStatuses({})
+      setAttendanceSaved(false)
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || 'Could not lock the session. Retry the lock action.')
     } finally {
       setSaving(false)
     }
@@ -129,8 +146,10 @@ export default function InstitutionalAttendancePage() {
 
         {sessionId && <Card><CardContent className="p-5">
           <div className="mb-4 flex items-center gap-2 font-semibold text-slate-950"><ClipboardCheck className="h-4 w-4" /> Mark attendance · {students.length} students</div>
-          <div className="space-y-3">{students.map(student => <div key={student.id} className="flex flex-col justify-between gap-3 border-b border-slate-100 pb-3 sm:flex-row sm:items-center"><div><p className="font-medium text-slate-800">{student.name}</p><p className="text-xs text-slate-500">{student.registration_number}</p></div><select value={statuses[student.id] || ''} onChange={e => setStatuses(previous => ({ ...previous, [student.id]: e.target.value }))} className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm"><option value="">Select status</option><option value="present">Present</option><option value="absent">Absent</option><option value="late">Late</option><option value="excused">Excused</option></select></div>)}</div>
-          <div className="mt-5 flex justify-end"><Button onClick={() => void saveAttendance()} disabled={saving || !students.length}>{saving ? 'Saving...' : 'Save and lock attendance'}</Button></div>
+          {!attendanceSaved ? <>
+            <div className="space-y-3">{students.map(student => <div key={student.id} className="flex flex-col justify-between gap-3 border-b border-slate-100 pb-3 sm:flex-row sm:items-center"><div><p className="font-medium text-slate-800">{student.name}</p><p className="text-xs text-slate-500">{student.registration_number}</p></div><select value={statuses[student.id] || ''} onChange={e => setStatuses(previous => ({ ...previous, [student.id]: e.target.value }))} className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm"><option value="">Select status</option><option value="present">Present</option><option value="absent">Absent</option><option value="late">Late</option><option value="excused">Excused</option></select></div>)}</div>
+            <div className="mt-5 flex justify-end"><Button onClick={() => void saveAttendance()} disabled={saving || !students.length}>{saving ? 'Saving...' : 'Save attendance records'}</Button></div>
+          </> : <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><p className="text-sm text-slate-600">All attendance records are saved. Lock the session when ready.</p><Button onClick={() => void lockSession()} disabled={saving}>{saving ? 'Locking...' : 'Lock session'}</Button></div>}
         </CardContent></Card>}
         {courseId && !sessionId && students.length === 0 && !error && <p className="text-sm text-slate-500">No active students are enrolled in this course.</p>}
       </div>
