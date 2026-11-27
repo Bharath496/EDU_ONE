@@ -517,7 +517,7 @@ class ApiClient {
     return response.data
   }
 
-  async getLibraryBooks(params?: { search?: string; page?: number; limit?: number }) {
+  async getInstitutionalLibraryBooks(params?: { search?: string; page?: number; limit?: number }) {
     const response = await this.client.get('/v1/library/books', { params })
     return response.data
   }
@@ -542,7 +542,7 @@ class ApiClient {
     return response.data
   }
 
-  async getSupportTickets(params?: { status?: string }) {
+  async getInstitutionalSupportTickets(params?: { status?: string }) {
     const response = await this.client.get('/v1/support/tickets', { params })
     return response.data
   }
@@ -550,7 +550,7 @@ class ApiClient {
     const response = await this.client.get(`/v1/support/tickets/${ticketId}`)
     return response.data
   }
-  async createSupportTicket(payload: { student_profile_id: string; category: string; subject: string; description: string }) {
+  async createInstitutionalSupportTicket(payload: { student_profile_id: string; category: string; subject: string; description: string }) {
     const response = await this.client.post('/v1/support/tickets', payload)
     return response.data
   }
@@ -558,7 +558,7 @@ class ApiClient {
     const response = await this.client.post(`/v1/support/tickets/${ticketId}/messages`, { body })
     return response.data
   }
-  async updateSupportTicket(ticketId: string, payload: { status: 'open' | 'in_progress' | 'resolved' | 'closed'; assigned_to?: string; resolution?: string }) {
+  async updateInstitutionalSupportTicket(ticketId: string, payload: { status: 'open' | 'in_progress' | 'resolved' | 'closed'; assigned_to?: string; resolution?: string }) {
     const response = await this.client.patch(`/v1/support/tickets/${ticketId}`, payload)
     return response.data
   }
