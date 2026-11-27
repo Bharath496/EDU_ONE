@@ -191,3 +191,28 @@ def test_support_ticket_workflow() -> None:
     )
     assert updated.status_code == 200
     assert updated.json()["status"] == "resolved"
+
+
+
+def test_readiness_fails_closed_without_database(monkeypatch: pytest.MonkeyPatch) -> None:
+    from database import get_engine
+
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    get_engine.cache_clear()
+    response = client.get("/ready")
+    assert response.status_code == 503
+    assert response.json()["detail"] == "Database is not ready"
+    get_engine.cache_clear()
+
+
+def test_readiness_checks_database_connection(monkeypatch: pytest.MonkeyPatch) -> None:
+    from database import get_engine
+
+    monkeypatch.setenv("DATABASE_URL", "sqlite+pysqlite:///:memory:")
+    get_engine.cache_clear()
+    response = client.get("/ready")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ready", "database": "connected"}
+    engine = get_engine()
+    get_engine.cache_clear()
+    engine.dispose()
