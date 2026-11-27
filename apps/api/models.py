@@ -463,3 +463,39 @@ class CalendarEvent(Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="published")
     created_by: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class PlacementOpportunity(Base):
+    __tablename__ = "placement_opportunities"
+    __table_args__ = (Index("ix_placement_tenant_status_deadline", "institution_id", "status", "application_deadline"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    institution_id: Mapped[str] = mapped_column(ForeignKey("institutions.id", ondelete="RESTRICT"), nullable=False)
+    company: Mapped[str] = mapped_column(String(180), nullable=False)
+    title: Mapped[str] = mapped_column(String(180), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    location: Mapped[str | None] = mapped_column(String(160))
+    employment_type: Mapped[str] = mapped_column(String(40), nullable=False, default="full_time")
+    eligibility_text: Mapped[str | None] = mapped_column(Text)
+    application_deadline: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="published")
+    created_by: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class PlacementApplication(Base):
+    __tablename__ = "placement_applications"
+    __table_args__ = (
+        UniqueConstraint("opportunity_id", "student_profile_id", name="uq_placement_student_application"),
+        Index("ix_placement_apps_tenant_student", "institution_id", "student_profile_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    institution_id: Mapped[str] = mapped_column(ForeignKey("institutions.id", ondelete="RESTRICT"), nullable=False)
+    opportunity_id: Mapped[str] = mapped_column(ForeignKey("placement_opportunities.id", ondelete="CASCADE"), nullable=False)
+    student_profile_id: Mapped[str] = mapped_column(ForeignKey("student_profiles.id", ondelete="RESTRICT"), nullable=False)
+    application_note: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(24), nullable=False, default="applied")
+    status_updated_by: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    applied_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
