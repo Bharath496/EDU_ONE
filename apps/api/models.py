@@ -1,7 +1,7 @@
 """Initial tenant-aware identity and audit data model."""
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import date, datetime, time, timezone
 from uuid import uuid4
 
 from sqlalchemy import Boolean, CheckConstraint, Date, DateTime, ForeignKey, Index, Integer, JSON, Numeric, String, Text, Time, UniqueConstraint
@@ -436,8 +436,8 @@ class TimetableSlot(Base):
     course_id: Mapped[str] = mapped_column(ForeignKey("academic_courses.id", ondelete="RESTRICT"), nullable=False)
     faculty_user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
     weekday: Mapped[int] = mapped_column(Integer, nullable=False)
-    start_time: Mapped[datetime] = mapped_column(Time, nullable=False)
-    end_time: Mapped[datetime] = mapped_column(Time, nullable=False)
+    start_time: Mapped[time] = mapped_column(Time, nullable=False)
+    end_time: Mapped[time] = mapped_column(Time, nullable=False)
     room: Mapped[str | None] = mapped_column(String(40))
     effective_from: Mapped[date] = mapped_column(Date, nullable=False)
     effective_to: Mapped[date | None] = mapped_column(Date)
