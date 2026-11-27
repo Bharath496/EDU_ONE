@@ -41,7 +41,7 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
     }),
     "Vice Principal": frozenset({
         "students.read", "faculty.read", "academics.read", "attendance.read",
-        "exams.read", "marks.read", "fees.read", "reports.read", "notices.publish",
+        "exams.read", "marks.read", "fees.read", "reports.read", "notices.publish", "support.manage",
     }),
     "HOD": frozenset({
         "students.read", "faculty.read", "academics.read", "attendance.read",
