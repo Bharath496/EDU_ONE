@@ -52,7 +52,6 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         isLoading: false,
       })
     } catch {
-      api.setAccessToken(null)
       localStorage.removeItem('access_token')
       localStorage.removeItem('refresh_token')
       localStorage.removeItem('user')
@@ -113,10 +112,12 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       isAuthenticated: false,
       isLoading: false,
     })
+    api.setAccessToken(null)
     if (typeof window !== 'undefined') {
       localStorage.removeItem('access_token')
       localStorage.removeItem('refresh_token')
       localStorage.removeItem('user')
+      localStorage.removeItem('eduone-demo-user')
     }
   },
 
