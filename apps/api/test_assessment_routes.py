@@ -109,6 +109,9 @@ def test_exam_marks_are_hidden_until_exam_cell_publishes_results(assessment_clie
         "results": [{"student_profile_id": ids["profile"], "marks_obtained": 42, "grade": "A"}],
     })
     assert entered.status_code == 200
+    staff_results = client.get(f"/v1/exams/{exam_id}/results", headers=faculty_headers)
+    assert staff_results.status_code == 200
+    assert staff_results.json()[0]["marks_obtained"] == 42.0
 
     student_headers = headers(ids["student"], "Student")
     assert client.get("/v1/results/me", headers=student_headers).json() == []
@@ -138,6 +141,9 @@ def test_student_can_submit_assignment_and_faculty_can_grade(assessment_client) 
     })
     assert submission.status_code == 201
     submission_id = submission.json()["id"]
+    staff_submissions = client.get(f"/v1/assignments/{assignment_id}/submissions", headers=faculty_headers)
+    assert staff_submissions.status_code == 200
+    assert staff_submissions.json()[0]["student_profile_id"] == ids["profile"]
 
     graded = client.post(f"/v1/assignments/submissions/{submission_id}/grade", headers=faculty_headers, json={
         "marks_obtained": 18, "feedback": "Good evaluation and explanation.",
