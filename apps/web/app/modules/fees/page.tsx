@@ -64,9 +64,9 @@ export default function FeesPage() {
   const [status, setStatus] = useState('All')
   const canManage = user?.role === 'College Admin' || user?.role === 'Staff'
   const canPay = canManage || user?.role === 'Student' || user?.role === 'Parent'
-  const matchedStudent =
-    students.find((student) => student.name.toLowerCase() === user?.name.toLowerCase()) ??
-    students[0]
+  const matchedStudent = user?.studentId
+    ? students.find((student) => student.id === user.studentId)
+    : undefined
   const visibleFees = canManage
     ? fees
     : fees.filter((fee) => fee.studentId === matchedStudent?.id)
