@@ -190,6 +190,35 @@ def get_course(
     return _course_dict(course)
 
 
+@courses_router.get("/{course_id}/students")
+def list_course_students(
+    course_id: str,
+    principal: Annotated[AuthPrincipal, Depends(get_current_principal)],
+    db: Annotated[Session, Depends(get_db)],
+) -> list[dict]:
+    if {"Student", "Parent"}.intersection(principal.roles):
+        raise HTTPException(status_code=403, detail="Student and parent accounts cannot browse other students")
+    course = _load_course(db, principal, course_id)
+    _authorize_course(principal, course, "students.read")
+    rows = db.execute(
+        select(StudentProfile, User)
+        .join(User, User.id == StudentProfile.user_id)
+        .join(CourseEnrollment, CourseEnrollment.student_profile_id == StudentProfile.id)
+        .where(
+            CourseEnrollment.institution_id == principal.institution.id,
+            CourseEnrollment.course_id == course.id,
+            CourseEnrollment.status == "active",
+            StudentProfile.institution_id == principal.institution.id,
+            StudentProfile.is_active.is_(True),
+        )
+        .order_by(StudentProfile.registration_number)
+    ).all()
+    return [{
+        "id": profile.id, "registration_number": profile.registration_number,
+        "name": user.full_name, "email": user.email,
+    } for profile, user in rows]
+
+
 @courses_router.post("", status_code=status.HTTP_201_CREATED)
 def create_course(
     payload: CourseCreatePayload,
