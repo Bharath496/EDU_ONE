@@ -2,8 +2,7 @@
 
 Status reviewed: 27 November 2026  
 Working branch: `know-envi-rebuild`  
-Verified code commit: `68e5f4abca475b2d9a11277834b4151a41a76407`  
-The branch tip contains documentation-only commits after this verified code commit.  
+Verified code checkpoints: `12be1a86065d2fff0a28b2afca872d0168b7f8a3` (timetable UI) and `e8ace3cc364c04102e8dd04518262a1da8e94810` (parent timetable API/test). The branch tip also contains documentation and CI-concurrency updates after these code checkpoints.  
 `main` remains at its original base commit: `9942dfb2081d47e333101456afeaeeb0ca35f48a`  
 Repository: `Bharath496/EDU_ONE`
 
@@ -47,6 +46,8 @@ These are CI results at the named commits, not a claim that every later commit h
 | `6bb58a380a195e27244311037a0fb355ae771910` | API suite: 70 passed; Alembic migration validation passed |
 | `9910a3a55c99a8ed5133da8c9d8ca9b116c11b0d` | API suite and migration validation passed; Docker Compose config validation and API image build passed |
 | `68e5f4abca475b2d9a11277834b4151a41a76407` | Full CI passed: frontend lint/typecheck/build; API suite **76 passed**; Alembic migration validation; Compose config; API image build; PostgreSQL + API Compose integration stack reached `/ready` and shut down cleanly |
+| `e8ace3cc364c04102e8dd04518262a1da8e94810` | API suite **77 passed**; migration, Compose config, API image build and PostgreSQL/API integration checks passed |
+| `12be1a86065d2fff0a28b2afca872d0168b7f8a3` | Frontend lint, TypeScript check and production build passed with the live timetable/calendar page included; API and PostgreSQL integration checks also passed |
 
 The verified code commit includes the fee-payment row locking, service-worker cache restrictions, faculty course-scoped student roster, login-origin validation and API security headers. The current branch head is a README-only documentation commit on top of that verified code. Review the latest [branch Actions runs](https://github.com/Bharath496/EDU_ONE/actions?query=branch%3Aknow-envi-rebuild) for any subsequent changes.
 
