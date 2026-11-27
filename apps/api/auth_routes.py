@@ -47,6 +47,29 @@ def _cookie_secure() -> bool:
     return os.getenv("COOKIE_SECURE", "true").strip().lower() not in {"0", "false", "no"}
 
 
+def _cookie_samesite() -> str:
+    value = os.getenv("COOKIE_SAMESITE", "none").strip().lower()
+    if value not in {"lax", "strict", "none"}:
+        raise RuntimeError("COOKIE_SAMESITE must be lax, strict, or none")
+    if value == "none" and not _cookie_secure():
+        raise RuntimeError("SameSite=None requires COOKIE_SECURE=true")
+    return value
+
+
+def _require_trusted_origin(request: Request) -> None:
+    origin = request.headers.get("origin")
+    allowed = {
+        item.strip()
+        for item in os.getenv(
+            "AUTH_ALLOWED_ORIGINS",
+            "http://localhost:3000,https://bharath496.github.io",
+        ).split(",")
+        if item.strip()
+    }
+    if not origin or origin not in allowed:
+        raise HTTPException(status_code=403, detail="Untrusted request origin")
+
+
 def _issue_refresh_cookie(response: Response, token: str) -> None:
     response.set_cookie(
         key=REFRESH_COOKIE,
@@ -54,7 +77,7 @@ def _issue_refresh_cookie(response: Response, token: str) -> None:
         max_age=REFRESH_DAYS * 24 * 60 * 60,
         httponly=True,
         secure=_cookie_secure(),
-        samesite="lax",
+        samesite=_cookie_samesite(),
         path="/v1/auth",
     )
 
@@ -154,6 +177,7 @@ def refresh(
     response: Response,
     db: Annotated[Session, Depends(get_db)],
 ) -> dict:
+    _require_trusted_origin(request)
     old_token = request.cookies.get(REFRESH_COOKIE)
     if not old_token:
         raise HTTPException(status_code=401, detail="Refresh session is invalid")
@@ -197,6 +221,7 @@ def logout(
     request: Request,
     db: Annotated[Session, Depends(get_db)],
 ) -> Response:
+    _require_trusted_origin(request)
     token = request.cookies.get(REFRESH_COOKIE)
     if token:
         db.execute(
@@ -209,7 +234,7 @@ def logout(
         )
         db.commit()
     response = Response(status_code=status.HTTP_204_NO_CONTENT)
-    response.delete_cookie(REFRESH_COOKIE, path="/v1/auth", secure=_cookie_secure(), httponly=True, samesite="lax")
+    response.delete_cookie(REFRESH_COOKIE, path="/v1/auth", secure=_cookie_secure(), httponly=True, samesite=_cookie_samesite())
     return response
 
 
