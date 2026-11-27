@@ -563,6 +563,19 @@ class ApiClient {
     return response.data
   }
 
+  async getInstitutionalAnnouncements(params?: { category?: string }) {
+    const response = await this.client.get('/v1/announcements', { params })
+    return response.data
+  }
+  async createInstitutionalAnnouncement(payload: { title: string; body: string; category: string; audience_role?: string; department_id?: string; class_id?: string }) {
+    const response = await this.client.post('/v1/announcements', payload)
+    return response.data
+  }
+  async markInstitutionalAnnouncementRead(announcementId: string) {
+    const response = await this.client.post(`/v1/announcements/${announcementId}/read`)
+    return response.data
+  }
+
   getClient(): AxiosInstance {
     return this.client
   }
