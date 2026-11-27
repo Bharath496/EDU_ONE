@@ -21,7 +21,7 @@ AssignableRole = Literal[
     "Student", "Parent", "Faculty", "HOD", "Class Advisor", "Principal",
     "Vice Principal", "Exam Cell", "Accounts", "Librarian",
     "Placement Officer", "HR", "Admissions", "Hostel Warden",
-    "Transport Coordinator",
+    "Transport Coordinator", "Support Staff",
 ]
 
 
