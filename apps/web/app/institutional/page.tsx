@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { BookOpen, CalendarCheck, ClipboardList, GraduationCap, IndianRupee, LogOut, Users } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent } from '@/components/ui/Card'
@@ -85,7 +86,10 @@ export default function InstitutionalWorkspacePage() {
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
           <div><p className="text-xs font-semibold uppercase tracking-wider text-indigo-600">Institutional workspace</p><h1 className="mt-1 text-xl font-bold text-slate-950">{user?.collegeName || 'EDU_ONE'}</h1><p className="mt-1 text-sm text-slate-500">{user?.name} · {user?.role}</p></div>
-          <Button variant="outline" onClick={signOut} className="gap-2"><LogOut className="h-4 w-4" /> Sign out</Button>
+          <div className="flex items-center gap-2">
+            {user?.role === 'College Admin' && <Link href="/institutional/users" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Manage users</Link>}
+            <Button variant="outline" onClick={signOut} className="gap-2"><LogOut className="h-4 w-4" /> Sign out</Button>
+          </div>
         </div>
       </header>
       <div className="mx-auto max-w-7xl px-5 py-8">
