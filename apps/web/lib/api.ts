@@ -477,6 +477,10 @@ class ApiClient {
     const response = await this.client.get('/v1/timetable/faculty/me')
     return response.data
   }
+  async getLinkedStudentTimetables() {
+    const response = await this.client.get('/v1/timetable/linked')
+    return response.data
+  }
   async getInstitutionalCalendar(params?: { start_at?: string; end_at?: string }) {
     const response = await this.client.get('/v1/calendar', { params })
     return response.data
