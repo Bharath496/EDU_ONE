@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from collections import Counter
+import os
 from datetime import date, datetime
 from typing import Any, Literal
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -18,6 +20,27 @@ app = FastAPI(
         "It is intentionally not a production student-information system."
     ),
 )
+
+# The current API is a fictional, in-memory demo. Keep every business route
+# disabled unless a developer explicitly opts into demo mode. This prevents
+# accidental exposure of demo identities and mutable demo records on a deploy.
+DEMO_MODE_ENV = "EDUONE_DEMO_MODE"
+DEMO_SAFE_PATHS = {"/", "/health", "/openapi.json", "/docs", "/docs/oauth2-redirect", "/redoc"}
+
+
+@app.middleware("http")
+async def require_explicit_demo_mode(request: Request, call_next):
+    demo_enabled = os.getenv(DEMO_MODE_ENV, "false").strip().lower() in {"1", "true", "yes"}
+    if not demo_enabled and request.url.path not in DEMO_SAFE_PATHS:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "detail": "The demo API is disabled. Configure a production identity, database, and authorization layer before enabling institutional routes.",
+                "code": "DEMO_API_DISABLED",
+            },
+        )
+    return await call_next(request)
+
 
 app.add_middleware(
     CORSMiddleware,
