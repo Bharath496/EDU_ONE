@@ -93,3 +93,11 @@ def test_librarian_can_add_book_but_student_cannot(library_client) -> None:
     assert created.status_code == 201
     denied = client.post("/v1/library/books", headers=headers(ids["student"], "Student"), json=payload | {"isbn": "9780000000003"})
     assert denied.status_code == 403
+
+
+
+def test_librarian_can_view_student_identity_for_book_issuance(library_client) -> None:
+    client, ids, headers = library_client
+    response = client.get("/v1/students", headers=headers(ids["librarian"], "Librarian"))
+    assert response.status_code == 200
+    assert response.json()["items"][0]["id"] == ids["profile"]
