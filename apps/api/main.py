@@ -20,6 +20,7 @@ from user_routes import router as user_admin_router
 from library_routes import router as library_router
 from communication_routes import announcements_router, support_router
 from timetable_routes import calendar_router, timetable_router
+from placement_routes import router as placement_router
 
 
 app = FastAPI(
@@ -81,6 +82,7 @@ app.include_router(announcements_router)
 app.include_router(support_router)
 app.include_router(timetable_router)
 app.include_router(calendar_router)
+app.include_router(placement_router)
 
 
 Role = Literal["Super Admin", "College Admin", "Faculty", "Student", "Parent", "Staff"]
