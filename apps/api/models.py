@@ -359,3 +359,63 @@ class LibraryLoan(Base):
     returned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="issued")
     fine_amount: Mapped[float] = mapped_column(Numeric(8, 2), nullable=False, default=0)
+
+
+class Announcement(Base):
+    __tablename__ = "announcements"
+    __table_args__ = (Index("ix_announcements_tenant_status_publish", "institution_id", "status", "published_at"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    institution_id: Mapped[str] = mapped_column(ForeignKey("institutions.id", ondelete="RESTRICT"), nullable=False)
+    title: Mapped[str] = mapped_column(String(180), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    category: Mapped[str] = mapped_column(String(40), nullable=False, default="general")
+    audience_role: Mapped[str | None] = mapped_column(String(60))
+    department_id: Mapped[str | None] = mapped_column(String(36))
+    class_id: Mapped[str | None] = mapped_column(String(36))
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="published")
+    created_by: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=utc_now)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class AnnouncementRead(Base):
+    __tablename__ = "announcement_reads"
+    __table_args__ = (UniqueConstraint("announcement_id", "user_id", name="uq_announcement_user_read"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    institution_id: Mapped[str] = mapped_column(ForeignKey("institutions.id", ondelete="RESTRICT"), nullable=False)
+    announcement_id: Mapped[str] = mapped_column(ForeignKey("announcements.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    read_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class GrievanceTicket(Base):
+    __tablename__ = "grievance_tickets"
+    __table_args__ = (Index("ix_grievance_tenant_status_created", "institution_id", "status", "created_at"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    institution_id: Mapped[str] = mapped_column(ForeignKey("institutions.id", ondelete="RESTRICT"), nullable=False)
+    student_profile_id: Mapped[str] = mapped_column(ForeignKey("student_profiles.id", ondelete="RESTRICT"), nullable=False)
+    created_by: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    assigned_to: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    category: Mapped[str] = mapped_column(String(60), nullable=False)
+    subject: Mapped[str] = mapped_column(String(180), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    priority: Mapped[str] = mapped_column(String(20), nullable=False, default="normal")
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="open")
+    resolution: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+
+
+class GrievanceMessage(Base):
+    __tablename__ = "grievance_messages"
+    __table_args__ = (Index("ix_grievance_messages_ticket_created", "ticket_id", "created_at"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    institution_id: Mapped[str] = mapped_column(ForeignKey("institutions.id", ondelete="RESTRICT"), nullable=False)
+    ticket_id: Mapped[str] = mapped_column(ForeignKey("grievance_tickets.id", ondelete="CASCADE"), nullable=False)
+    sender_user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
