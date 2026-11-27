@@ -137,10 +137,10 @@ export default function HomePage() {
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
                 <Button
-                  onClick={() => router.push('/auth/institution')}
+                  onClick={() => router.push('/auth/sign-in')}
                   className="gap-2 bg-white text-slate-950 hover:bg-slate-100"
                 >
-                  Guided demo login
+                  Institution sign in
                   <ArrowRight className="h-4 w-4" />
                 </Button>
                 <Button
