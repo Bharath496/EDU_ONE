@@ -30,8 +30,13 @@ self.addEventListener('fetch', (event) => {
 
   // Only cache public, versioned build assets and explicitly public app metadata.
   // Never cache API responses, authenticated pages, student records, or documents.
-  const isNextStaticAsset = url.pathname.startsWith('/_next/static/')
-  if (!isNextStaticAsset && !PUBLIC_STATIC_PATHS.has(url.pathname)) return
+  const scopePath = new URL(self.registration.scope).pathname.replace(/\\/$/, '')
+  const relativePath = scopePath && scopePath !== '/'
+    ? url.pathname.slice(scopePath.length) || '/'
+    : url.pathname
+  const scopedPath = relativePath.startsWith('/') ? relativePath : `/${relativePath}`
+  const isNextStaticAsset = scopedPath.startsWith('/_next/static/')
+  if (!isNextStaticAsset && !PUBLIC_STATIC_PATHS.has(scopedPath)) return
 
   event.respondWith(
     caches.open(CACHE_NAME).then(async (cache) => {
