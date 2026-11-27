@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import date, datetime, timezone
 from uuid import uuid4
 
-from sqlalchemy import Boolean, CheckConstraint, Date, DateTime, ForeignKey, Index, Integer, JSON, Numeric, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, CheckConstraint, Date, DateTime, ForeignKey, Index, Integer, JSON, Numeric, String, Text, Time, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -418,4 +418,48 @@ class GrievanceMessage(Base):
     ticket_id: Mapped[str] = mapped_column(ForeignKey("grievance_tickets.id", ondelete="CASCADE"), nullable=False)
     sender_user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
     body: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class TimetableSlot(Base):
+    __tablename__ = "timetable_slots"
+    __table_args__ = (
+        CheckConstraint("weekday >= 0 AND weekday <= 6", name="ck_timetable_weekday"),
+        CheckConstraint("start_time < end_time", name="ck_timetable_time_range"),
+        Index("ix_timetable_tenant_class_day", "institution_id", "class_id", "weekday"),
+        Index("ix_timetable_tenant_faculty_day", "institution_id", "faculty_user_id", "weekday"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    institution_id: Mapped[str] = mapped_column(ForeignKey("institutions.id", ondelete="RESTRICT"), nullable=False)
+    class_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    course_id: Mapped[str] = mapped_column(ForeignKey("academic_courses.id", ondelete="RESTRICT"), nullable=False)
+    faculty_user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    weekday: Mapped[int] = mapped_column(Integer, nullable=False)
+    start_time: Mapped[datetime] = mapped_column(Time, nullable=False)
+    end_time: Mapped[datetime] = mapped_column(Time, nullable=False)
+    room: Mapped[str | None] = mapped_column(String(40))
+    effective_from: Mapped[date] = mapped_column(Date, nullable=False)
+    effective_to: Mapped[date | None] = mapped_column(Date)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_by: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class CalendarEvent(Base):
+    __tablename__ = "calendar_events"
+    __table_args__ = (Index("ix_calendar_tenant_status_start", "institution_id", "status", "start_at"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    institution_id: Mapped[str] = mapped_column(ForeignKey("institutions.id", ondelete="RESTRICT"), nullable=False)
+    title: Mapped[str] = mapped_column(String(180), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
+    event_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    start_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    end_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    audience_role: Mapped[str | None] = mapped_column(String(60))
+    department_id: Mapped[str | None] = mapped_column(String(36))
+    class_id: Mapped[str | None] = mapped_column(String(36))
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="published")
+    created_by: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
