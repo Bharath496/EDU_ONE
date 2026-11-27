@@ -11,6 +11,8 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+from auth_routes import router as institutional_auth_router
+
 
 app = FastAPI(
     title="EDU_ONE API",
@@ -31,7 +33,7 @@ DEMO_SAFE_PATHS = {"/", "/health", "/openapi.json", "/docs", "/docs/oauth2-redir
 @app.middleware("http")
 async def require_explicit_demo_mode(request: Request, call_next):
     demo_enabled = os.getenv(DEMO_MODE_ENV, "false").strip().lower() in {"1", "true", "yes"}
-    if not demo_enabled and request.url.path not in DEMO_SAFE_PATHS:
+    if not demo_enabled and request.url.path not in DEMO_SAFE_PATHS and not request.url.path.startswith("/v1/"):
         return JSONResponse(
             status_code=503,
             content={
@@ -52,6 +54,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(institutional_auth_router)
 
 
 Role = Literal["Super Admin", "College Admin", "Faculty", "Student", "Parent", "Staff"]
