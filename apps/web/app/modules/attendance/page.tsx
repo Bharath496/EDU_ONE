@@ -62,9 +62,9 @@ export default function AttendancePage() {
 
   const scopedStudents = useMemo(() => {
     if (canManage) return students
-    const matched =
-      students.find((student) => student.name.toLowerCase() === user?.name.toLowerCase()) ??
-      students[0]
+    const matched = user?.studentId
+      ? students.find((student) => student.id === user.studentId)
+      : undefined
     return matched ? [matched] : []
   }, [canManage, students, user?.name])
 
