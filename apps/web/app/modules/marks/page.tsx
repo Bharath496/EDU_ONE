@@ -36,9 +36,9 @@ export default function MarksPage() {
   const [search, setSearch] = useState('')
   const [course, setCourse] = useState('All')
   const canManage = user?.role === 'College Admin' || user?.role === 'Faculty'
-  const matchedStudent =
-    students.find((student) => student.name.toLowerCase() === user?.name.toLowerCase()) ??
-    students[0]
+  const matchedStudent = user?.studentId
+    ? students.find((student) => student.id === user.studentId)
+    : undefined
   const visibleMarks = canManage
     ? marks
     : marks.filter((mark) => mark.studentId === matchedStudent?.id)
