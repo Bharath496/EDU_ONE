@@ -8,7 +8,7 @@ from sqlalchemy.pool import StaticPool
 
 from database import get_db
 from main import app
-from models import Base, Institution, ParentStudentLink, StudentProfile, User, UserRole
+from models import AcademicCourse, Base, CourseEnrollment, Institution, ParentStudentLink, StaffAssignment, StudentProfile, User, UserRole
 from security import create_access_token, hash_password
 
 
@@ -50,6 +50,7 @@ def student_client(monkeypatch: pytest.MonkeyPatch):
         student3 = add_user("three@college.edu", "Student")
         parent = add_user("parent@college.edu", "Parent")
         hod = add_user("hod@college.edu", "HOD")
+        faculty = add_user("faculty@college.edu", "Faculty")
         outsider = add_user("outsider@other.edu", "Student", other_college.id)
 
         profile1 = StudentProfile(
@@ -68,6 +69,24 @@ def student_client(monkeypatch: pytest.MonkeyPatch):
         )
         db.add_all([profile1, profile2, other_profile])
         db.flush()
+        course1 = AcademicCourse(
+            institution_id=college.id, code="AIML101", title="AIML Foundations",
+            credits=3, department_id="dept-aiml", semester=5, class_id="class-5a",
+        )
+        course2 = AcademicCourse(
+            institution_id=college.id, code="CSE101", title="Computer Science",
+            credits=3, department_id="dept-cse", semester=5, class_id="class-5b",
+        )
+        db.add_all([course1, course2])
+        db.flush()
+        db.add_all([
+            CourseEnrollment(institution_id=college.id, course_id=course1.id, student_profile_id=profile1.id),
+            CourseEnrollment(institution_id=college.id, course_id=course2.id, student_profile_id=profile2.id),
+            StaffAssignment(
+                institution_id=college.id, user_id=faculty.id,
+                scope_type="course", scope_id=course1.id, permission="students.read",
+            ),
+        ])
         db.add(ParentStudentLink(
             institution_id=college.id, parent_user_id=parent.id,
             student_profile_id=profile1.id, is_verified=True,
@@ -76,7 +95,8 @@ def student_client(monkeypatch: pytest.MonkeyPatch):
         ids = {
             "college": college.id, "admin": admin.id, "student1": student1.id,
             "student2": student2.id, "student3": student3.id, "parent": parent.id,
-            "hod": hod.id, "profile1": profile1.id, "profile2": profile2.id,
+            "hod": hod.id, "faculty": faculty.id, "course1": course1.id,
+            "profile1": profile1.id, "profile2": profile2.id,
             "other_profile": other_profile.id,
         }
 
@@ -164,3 +184,15 @@ def test_student_cannot_create_or_modify_profiles(student_client) -> None:
         "registration_number": "REG003",
     })
     assert response.status_code == 403
+
+
+def test_faculty_student_roster_is_limited_to_assigned_courses(student_client) -> None:
+    client, ids, headers = student_client
+    faculty_headers = headers(ids["faculty"], "Faculty")
+    roster = client.get("/v1/students", headers=faculty_headers)
+    assert roster.status_code == 200
+    assert [row["id"] for row in roster.json()["items"]] == [ids["profile1"]]
+    allowed = client.get(f"/v1/students/{ids['profile1']}", headers=faculty_headers)
+    denied = client.get(f"/v1/students/{ids['profile2']}", headers=faculty_headers)
+    assert allowed.status_code == 200
+    assert denied.status_code == 403
