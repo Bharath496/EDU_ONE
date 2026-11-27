@@ -125,6 +125,46 @@ def student_timetable(
     return [_slot_dict(db, row) for row in rows if row.effective_from <= today and (row.effective_to is None or row.effective_to >= today)]
 
 
+@timetable_router.get("/linked")
+def linked_student_timetables(
+    principal: Annotated[AuthPrincipal, Depends(get_current_principal)],
+    db: Annotated[Session, Depends(get_db)],
+) -> list[dict]:
+    if "Parent" not in principal.roles:
+        raise HTTPException(status_code=403, detail="This endpoint is available to parent accounts")
+    linked_ids = principal.access_context.linked_student_ids
+    if not linked_ids:
+        return []
+    profiles = db.scalars(select(StudentProfile).where(
+        StudentProfile.institution_id == principal.institution.id,
+        StudentProfile.id.in_(linked_ids),
+        StudentProfile.is_active.is_(True),
+    ).order_by(StudentProfile.registration_number)).all()
+    today = date.today()
+    result = []
+    for profile in profiles:
+        try:
+            authorize(
+                principal.access_context, permission="academics.read",
+                resource_institution_id=principal.institution.id,
+                owner_user_id=profile.user_id, student_id=profile.id,
+            )
+        except AuthorizationError:
+            continue
+        student = db.get(User, profile.user_id)
+        rows = db.scalars(_slot_query(db, principal, profile.class_id)).all() if profile.class_id else []
+        result.append({
+            "student_profile_id": profile.id,
+            "student_name": student.full_name if student else None,
+            "registration_number": profile.registration_number,
+            "slots": [
+                _slot_dict(db, row) for row in rows
+                if row.effective_from <= today and (row.effective_to is None or row.effective_to >= today)
+            ],
+        })
+    return result
+
+
 @timetable_router.get("/faculty/me")
 def faculty_timetable(
     principal: Annotated[AuthPrincipal, Depends(get_current_principal)],
