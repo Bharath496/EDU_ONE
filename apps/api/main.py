@@ -17,6 +17,7 @@ from academic_routes import attendance_router, courses_router
 from assessment_routes import assignment_router, exam_router, result_router
 from fee_routes import router as fee_router
 from user_routes import router as user_admin_router
+from library_routes import router as library_router
 
 
 app = FastAPI(
@@ -73,6 +74,7 @@ app.include_router(result_router)
 app.include_router(assignment_router)
 app.include_router(fee_router)
 app.include_router(user_admin_router)
+app.include_router(library_router)
 
 
 Role = Literal["Super Admin", "College Admin", "Faculty", "Student", "Parent", "Staff"]
