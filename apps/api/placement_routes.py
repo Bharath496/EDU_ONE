@@ -99,8 +99,8 @@ def create_opportunity(
     db: Annotated[Session, Depends(get_db)],
 ) -> dict:
     _require_manage(principal)
-    if payload.application_deadline.tzinfo is None:
-        raise HTTPException(status_code=422, detail="Application deadline must include a timezone")
+    if payload.application_deadline.tzinfo is None or payload.application_deadline <= datetime.now(timezone.utc):
+        raise HTTPException(status_code=422, detail="Application deadline must be timezone-aware and in the future")
     item = PlacementOpportunity(
         institution_id=principal.institution.id,
         company=payload.company.strip(), title=payload.title.strip(),
@@ -160,6 +160,14 @@ def apply_to_opportunity(
     ))
     if profile is None:
         raise HTTPException(status_code=404, detail="Student profile not found")
+    try:
+        authorize(
+            principal.access_context, permission="placements.apply",
+            resource_institution_id=principal.institution.id,
+            owner_user_id=profile.user_id, student_id=profile.id,
+        )
+    except AuthorizationError as exc:
+        raise HTTPException(status_code=403, detail="You cannot apply from this student account") from exc
     item = db.scalar(select(PlacementOpportunity).where(
         PlacementOpportunity.id == opportunity_id,
         PlacementOpportunity.institution_id == principal.institution.id,
