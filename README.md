@@ -469,3 +469,6 @@ Placement Officers can publish, close and review opportunities and manage applic
 
 
 The institutional workspace includes a live student view for profile, attendance, results, courses, timetable, calendar, fees and placements. Staff can open the attendance marking screen, load only students enrolled in an assigned course, save present/absent/late/excused statuses and explicitly lock the session. College Admins have a user administration screen for account creation and activation/deactivation.
+
+
+The Accounts workspace supports student-linked invoice creation and a pending-payment verification queue. Payment references remain unverified until an Accounts user or College Admin explicitly verifies them; the application does not initiate UPI/bank transfers or claim that a student has paid merely because a request was submitted.
