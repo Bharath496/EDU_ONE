@@ -1,4 +1,8 @@
-const CACHE_NAME = 'eduone-static-v1'
+const CACHE_NAME = 'eduone-static-v2'
+const PUBLIC_STATIC_PATHS = new Set([
+  '/icon.svg',
+  '/manifest.webmanifest',
+])
 
 self.addEventListener('install', () => {
   self.skipWaiting()
@@ -19,34 +23,35 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const request = event.request
-  if (request.method !== 'GET') return
+  if (request.method !== 'GET' || request.mode === 'navigate') return
 
   const url = new URL(request.url)
   if (url.origin !== self.location.origin) return
 
+  // Only cache public, versioned build assets and explicitly public app metadata.
+  // Never cache API responses, authenticated pages, student records, or documents.
+  const isNextStaticAsset = url.pathname.startsWith('/_next/static/')
+  if (!isNextStaticAsset && !PUBLIC_STATIC_PATHS.has(url.pathname)) return
+
   event.respondWith(
-    fetch(request)
-      .then((response) => {
-        if (response.ok) {
-          const copy = response.clone()
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy))
+    caches.open(CACHE_NAME).then(async (cache) => {
+      const cached = await cache.match(request)
+      if (cached) return cached
+
+      try {
+        const response = await fetch(request)
+        const cacheControl = response.headers.get('Cache-Control') || ''
+        const isPublicCacheable = !/private|no-store/i.test(cacheControl)
+        if (response.ok && response.type === 'basic' && isPublicCacheable) {
+          await cache.put(request, response.clone())
         }
         return response
-      })
-      .catch(async () => {
-        const cached = await caches.match(request)
-        if (cached) return cached
-
-        if (request.mode === 'navigate') {
-          const scopeUrl = new URL(self.registration.scope)
-          const shell = await caches.match(scopeUrl.href)
-          if (shell) return shell
-        }
-
-        return new Response('EDU_ONE is offline and this page has not been cached yet.', {
+      } catch {
+        return new Response('This public asset is unavailable while offline.', {
           status: 503,
           headers: { 'Content-Type': 'text/plain; charset=utf-8' },
         })
-      })
+      }
+    })
   )
 })
