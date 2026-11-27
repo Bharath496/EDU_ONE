@@ -475,3 +475,6 @@ The Accounts workspace supports student-linked invoice creation and a pending-pa
 
 
 The live Library screen lets Librarians/College Admins add catalogue items, issue available copies to enrolled student profiles and record returns; students can view their own loan history. Overdue fines are calculated and recorded on return but are not automatically collected.
+
+
+The Support workspace is available to students, parents with verified links, Support Staff, College Admin, Principal and Vice Principal. It supports ticket creation, private message threads and status/resolution updates. Support attachments and external notification delivery are not enabled.
