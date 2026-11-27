@@ -118,12 +118,15 @@ def list_invoices(
         query = query.where(FeeInvoice.student_profile_id.in_(context.linked_student_ids))
     else:
         raise HTTPException(status_code=403, detail="You do not have access to fee records")
+    if status_filter == "overdue":
+        query = query.where(FeeInvoice.status.in_(["issued", "partially_paid"]), FeeInvoice.due_date < date.today())
+    elif status_filter in {"issued", "partially_paid"}:
+        query = query.where(FeeInvoice.status == status_filter, FeeInvoice.due_date >= date.today())
+    elif status_filter:
+        query = query.where(FeeInvoice.status == status_filter)
     total = db.scalar(select(func.count()).select_from(query.subquery())) or 0
     rows = db.scalars(query.order_by(FeeInvoice.due_date.desc()).offset((page - 1) * limit).limit(limit)).all()
-    items = [_invoice_dict(db, row) for row in rows]
-    if status_filter:
-        items = [item for item in items if item["status"] == status_filter]
-    return {"items": items, "total": total, "page": page, "limit": limit}
+    return {"items": [_invoice_dict(db, row) for row in rows], "total": total, "page": page, "limit": limit}
 
 
 @router.get("/invoices/{invoice_id}")
@@ -238,7 +241,9 @@ def verify_payment(
         raise HTTPException(status_code=404, detail="Payment request not found")
     if payment.status != "pending":
         raise HTTPException(status_code=409, detail="Only pending payments can be verified")
-    invoice = _load_invoice(db, principal, payment.invoice_id)
+    invoice = db.scalar(select(FeeInvoice).where(FeeInvoice.id == payment.invoice_id, FeeInvoice.institution_id == principal.institution.id).with_for_update())
+    if invoice is None:
+        raise HTTPException(status_code=404, detail="Fee invoice not found")
     paid = _paid_amount(db, invoice.id)
     amount = Decimal(str(payment.amount))
     invoice_amount = Decimal(str(invoice.amount))
