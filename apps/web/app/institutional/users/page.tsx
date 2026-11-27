@@ -81,7 +81,7 @@ export default function InstitutionalUsersPage() {
     setError('')
     setSuccess('')
     try {
-      await api.updateInstitutionalUserStatus(item.id, { is_active: !item.is_active, is_locked: item.is_locked })
+      await api.updateInstitutionalUserStatus(item.id, item.is_locked ? { is_active: item.is_active, is_locked: false } : { is_active: !item.is_active, is_locked: false })
       setSuccess('Account status updated.')
       await load()
     } catch (err: any) {
@@ -123,7 +123,7 @@ export default function InstitutionalUsersPage() {
           <div className="mt-4 overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead><tr className="border-b border-slate-200 text-xs uppercase text-slate-500"><th className="py-3 pr-3">Name / email</th><th className="py-3 pr-3">Role</th><th className="py-3 pr-3">Status</th><th className="py-3">Action</th></tr></thead>
-              <tbody>{users.map(item => <tr key={item.id} className="border-b border-slate-100"><td className="py-3 pr-3"><p className="font-medium text-slate-800">{item.name}</p><p className="text-xs text-slate-500">{item.email}</p></td><td className="py-3 pr-3">{item.roles.map((r: any) => r.role).join(', ')}</td><td className="py-3 pr-3">{item.is_locked ? 'Locked' : item.is_active ? 'Active' : 'Inactive'}</td><td className="py-3"><button disabled={item.id === user?.id} onClick={() => void toggleStatus(item)} className="text-xs font-semibold text-indigo-600 disabled:text-slate-300">{item.is_active ? 'Deactivate' : 'Activate'}</button></td></tr>)}</tbody>
+              <tbody>{users.map(item => <tr key={item.id} className="border-b border-slate-100"><td className="py-3 pr-3"><p className="font-medium text-slate-800">{item.name}</p><p className="text-xs text-slate-500">{item.email}</p></td><td className="py-3 pr-3">{item.roles.map((r: any) => r.role).join(', ')}</td><td className="py-3 pr-3">{item.is_locked ? 'Locked' : item.is_active ? 'Active' : 'Inactive'}</td><td className="py-3"><button disabled={item.id === user?.id} onClick={() => void toggleStatus(item)} className="text-xs font-semibold text-indigo-600 disabled:text-slate-300">{item.is_locked ? 'Unlock' : item.is_active ? 'Deactivate' : 'Activate'}</button></td></tr>)}</tbody>
             </table>
             {users.length === 0 && <p className="py-8 text-center text-sm text-slate-500">No user accounts found.</p>}
           </div>
