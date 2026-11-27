@@ -337,6 +337,90 @@ class ApiClient {
     return response.data
   }
 
+  // Versioned database-backed institutional endpoints.
+  async getInstitutionalStudents(params?: { search?: string; page?: number; limit?: number }) {
+    const response = await this.client.get('/v1/students', { params })
+    return response.data
+  }
+  async getMyStudentProfile() {
+    const response = await this.client.get('/v1/students/me')
+    return response.data
+  }
+  async getInstitutionalCourses(params?: { department_id?: string; semester?: number; search?: string }) {
+    const response = await this.client.get('/v1/academics/courses', { params })
+    return response.data
+  }
+  async getMyAttendance() {
+    const response = await this.client.get('/v1/attendance/me')
+    return response.data
+  }
+  async getStudentAttendance(studentId: string) {
+    const response = await this.client.get(`/v1/attendance/students/${studentId}`)
+    return response.data
+  }
+  async getInstitutionalExams(params?: { course_id?: string }) {
+    const response = await this.client.get('/v1/exams', { params })
+    return response.data
+  }
+  async getMyResults() {
+    const response = await this.client.get('/v1/results/me')
+    return response.data
+  }
+  async getStudentResults(studentId: string) {
+    const response = await this.client.get(`/v1/results/students/${studentId}`)
+    return response.data
+  }
+  async getInstitutionalAssignments(params?: { course_id?: string }) {
+    const response = await this.client.get('/v1/assignments', { params })
+    return response.data
+  }
+  async getInstitutionalFees(params?: { status?: string; page?: number; limit?: number }) {
+    const response = await this.client.get('/v1/fees/invoices', { params })
+    return response.data
+  }
+
+  // Versioned database-backed institutional endpoints.
+  async getInstitutionalStudents(params?: { search?: string; page?: number; limit?: number }) {
+    const response = await this.client.get('/v1/students', { params })
+    return response.data
+  }
+  async getMyStudentProfile() {
+    const response = await this.client.get('/v1/students/me')
+    return response.data
+  }
+  async getInstitutionalCourses(params?: { department_id?: string; semester?: number; search?: string }) {
+    const response = await this.client.get('/v1/academics/courses', { params })
+    return response.data
+  }
+  async getMyAttendance() {
+    const response = await this.client.get('/v1/attendance/me')
+    return response.data
+  }
+  async getStudentAttendance(studentId: string) {
+    const response = await this.client.get(`/v1/attendance/students/${studentId}`)
+    return response.data
+  }
+  async getInstitutionalExams(params?: { course_id?: string }) {
+    const response = await this.client.get('/v1/exams', { params })
+    return response.data
+  }
+  async getMyResults() {
+    const response = await this.client.get('/v1/results/me')
+    return response.data
+  }
+  async getStudentResults(studentId: string) {
+    const response = await this.client.get(`/v1/results/students/${studentId}`)
+    return response.data
+  }
+  async getInstitutionalAssignments(params?: { course_id?: string }) {
+    const response = await this.client.get('/v1/assignments', { params })
+    return response.data
+  }
+  async getInstitutionalFees(params?: { status?: string; page?: number; limit?: number }) {
+    const response = await this.client.get('/v1/fees/invoices', { params })
+    return response.data
+  }
+
   getClient(): AxiosInstance {
     return this.client
   }
