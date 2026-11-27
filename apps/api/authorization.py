@@ -133,24 +133,20 @@ def authorize(
             return
         raise AuthorizationError("Parent has no verified link to this student")
 
-    allowed = any(permission in ROLE_PERMISSIONS[role] for role in granted_roles)
-    if not allowed:
+    allowed_roles = [role for role in granted_roles if permission in ROLE_PERMISSIONS[role]]
+    if not allowed_roles:
         raise AuthorizationError("Permission is not granted to this role")
 
-    for role in granted_roles:
-        required_scope = SCOPED_ROLE_TYPES.get(role)
-        if required_scope and permission in ROLE_PERMISSIONS[role]:
-            if scope_type == required_scope and scope_id:
-                if (scope_type, scope_id, permission) in context.assignments:
-                    return
-            # A more privileged non-scoped role may still grant the permission.
-            if any(
-                permission in ROLE_PERMISSIONS[other]
-                and other not in SCOPED_ROLE_TYPES
-                and other not in {"Student", "Parent", "Super Admin"}
-                for other in granted_roles
-            ):
-                return
-            raise AuthorizationError("No matching department, class, or course assignment")
-
-    return
+    # Any recognized institution-wide role grant is sufficient. Otherwise,
+    # one matching scoped assignment must authorize the requested resource.
+    if any(role not in SCOPED_ROLE_TYPES for role in allowed_roles):
+        return
+    for role in allowed_roles:
+        required_scope = SCOPED_ROLE_TYPES[role]
+        if (
+            scope_type == required_scope
+            and scope_id
+            and (scope_type, scope_id, permission) in context.assignments
+        ):
+            return
+    raise AuthorizationError("No matching department, class, or course assignment")
