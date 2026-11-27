@@ -365,7 +365,7 @@ def update_ticket(
     principal: Annotated[AuthPrincipal, Depends(get_current_principal)],
     db: Annotated[Session, Depends(get_db)],
 ) -> dict:
-    if "support.manage" not in principal.access_context.roles:
+    if not _has_support_management(principal):
         raise HTTPException(status_code=403, detail="Only support staff can update ticket status")
     ticket = db.scalar(select(GrievanceTicket).where(
         GrievanceTicket.id == ticket_id,
