@@ -1,9 +1,23 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from main import StudentSignal, app, calculate_risk
 
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def enable_demo_mode_for_legacy_demo_tests(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Existing endpoint tests intentionally exercise the fictional demo API.
+    monkeypatch.setenv("EDUONE_DEMO_MODE", "true")
+
+
+def test_business_routes_are_disabled_without_explicit_demo_opt_in(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("EDUONE_DEMO_MODE", raising=False)
+    response = client.get("/students")
+    assert response.status_code == 503
+    assert response.json()["code"] == "DEMO_API_DISABLED"
 
 
 def test_health() -> None:
