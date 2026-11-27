@@ -282,6 +282,7 @@ class AssignmentSubmission(Base):
 class FeeInvoice(Base):
     __tablename__ = "fee_invoices"
     __table_args__ = (
+        UniqueConstraint("institution_id", "invoice_number", name="uq_fee_invoice_tenant_number"),
         Index("ix_fee_invoices_tenant_student_due", "institution_id", "student_profile_id", "due_date"),
         CheckConstraint("amount > 0", name="ck_fee_invoice_amount_positive"),
     )
@@ -289,7 +290,7 @@ class FeeInvoice(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     institution_id: Mapped[str] = mapped_column(ForeignKey("institutions.id", ondelete="RESTRICT"), nullable=False)
     student_profile_id: Mapped[str] = mapped_column(ForeignKey("student_profiles.id", ondelete="RESTRICT"), nullable=False)
-    invoice_number: Mapped[str] = mapped_column(String(60), nullable=False, unique=True)
+    invoice_number: Mapped[str] = mapped_column(String(60), nullable=False)
     fee_type: Mapped[str] = mapped_column(String(80), nullable=False)
     description: Mapped[str | None] = mapped_column(String(300))
     amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
