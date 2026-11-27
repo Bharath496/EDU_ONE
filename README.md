@@ -451,7 +451,7 @@ The API supports institution, department, class and role-targeted announcements 
 
 ## Timetable and academic calendar
 
-The API includes class timetable slots, faculty assignments, effective dates and overlap checks for both classes and faculty. Students can read their own class timetable, faculty can read their assigned timetable, and staff access is checked against course/class/department scopes. Calendar events can be targeted by role, department or class. These endpoints are live API foundations; a full timetable editor and calendar UI are still to be completed.
+The API includes class timetable slots, faculty assignments, effective dates and overlap checks for both classes and faculty. Students can read their own class timetable, faculty can read their assigned timetable, and staff access is checked against course/class/department scopes. Calendar events can be targeted by role, department or class. The institutional workspace now includes a live timetable read view for students and faculty, a verified linked-student timetable view for parents, and a published academic calendar for all authorized accounts. The class-level timetable editor and administrative class schedule view remain to be completed.
 
 
 ## Placement opportunities
