@@ -407,3 +407,16 @@ Before real institutional use, at minimum add:
 ## License
 
 MIT
+
+## Database foundation (development branch)
+
+The API now includes tenant-aware SQLAlchemy models for institutions, users, role grants, student profiles, verified parent/student links, staff scope assignments, refresh sessions and audit events. Database connections require `DATABASE_URL`; schema changes are applied explicitly with Alembic rather than creating production tables during application startup.
+
+For a disposable local SQLite schema check, run from `apps/api`:
+
+```bash
+python -m pip install -r requirements.txt
+DATABASE_URL=sqlite:///./edu_one_local.db alembic upgrade head
+```
+
+For PostgreSQL, provide a managed PostgreSQL URL through the deployment environment and run the same migration command during a controlled release. Keep database credentials and `JWT_SECRET_KEY` out of Git. The identity models and token helpers are foundational components; the existing demo routes have not yet been migrated to them and remain blocked by default outside explicit demo mode.
