@@ -129,7 +129,7 @@ def _visible_course_query(db: Session, principal: AuthPrincipal):
         AcademicCourse.is_active.is_(True),
     )
     roles = context.roles
-    if {"College Admin", "Principal", "Vice Principal"}.intersection(roles):
+    if {"College Admin", "Principal", "Vice Principal", "Exam Cell"}.intersection(roles):
         authorize(context, permission="academics.read", resource_institution_id=principal.institution.id)
         return query
     if "HOD" in roles:
