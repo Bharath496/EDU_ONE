@@ -128,7 +128,7 @@ def list_exams(
         Exam.course_id.in_([course_id] if course_id else course_ids),
     )
     if {"Student", "Parent"}.intersection(principal.roles):
-        query = query.where(Exam.status == "published")
+        query = query.where(Exam.status.in_(["published", "completed"]))
     rows = db.scalars(query.order_by(Exam.start_at)).all()
     return [_exam_dict(row) for row in rows]
 
