@@ -30,7 +30,8 @@ self.addEventListener('fetch', (event) => {
 
   // Only cache public, versioned build assets and explicitly public app metadata.
   // Never cache API responses, authenticated pages, student records, or documents.
-  const scopePath = new URL(self.registration.scope).pathname.replace(/\\/$/, '')
+  const rawScopePath = new URL(self.registration.scope).pathname
+  const scopePath = rawScopePath.endsWith('/') ? rawScopePath.slice(0, -1) : rawScopePath
   const relativePath = scopePath && scopePath !== '/'
     ? url.pathname.slice(scopePath.length) || '/'
     : url.pathname
