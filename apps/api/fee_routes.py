@@ -110,7 +110,7 @@ def list_invoices(
 ) -> dict:
     context = principal.access_context
     query = select(FeeInvoice).where(FeeInvoice.institution_id == principal.institution.id)
-    if "College Admin" in context.roles or "Accounts" in context.roles:
+    if {"College Admin", "Accounts", "Principal", "Vice Principal"}.intersection(context.roles):
         authorize(context, permission="fees.read", resource_institution_id=principal.institution.id)
     elif "Student" in context.roles:
         query = query.where(FeeInvoice.student_profile_id.in_(context.own_student_ids))
