@@ -420,3 +420,9 @@ DATABASE_URL=sqlite:///./edu_one_local.db alembic upgrade head
 ```
 
 For PostgreSQL, provide a managed PostgreSQL URL through the deployment environment and run the same migration command during a controlled release. Keep database credentials and `JWT_SECRET_KEY` out of Git. The identity models and token helpers are foundational components; the existing demo routes have not yet been migrated to them and remain blocked by default outside explicit demo mode.
+
+### Institutional auth configuration
+
+Set `JWT_SECRET_KEY` to a randomly generated secret of at least 32 bytes. Set `DATABASE_URL` to the managed PostgreSQL connection string. Configure `CORS_ORIGINS` and `AUTH_ALLOWED_ORIGINS` as comma-separated exact origins for the deployed web application; do not use wildcards with credentialed requests. Refresh tokens are kept in an HttpOnly, Secure cookie, rotated on refresh and stored server-side only as hashes. The default cookie policy is `SameSite=None; Secure` for a separately hosted web client. For local HTTP development, set `COOKIE_SECURE=false` and `COOKIE_SAMESITE=lax` together. Browser refresh/logout requests require a trusted Origin.
+
+The institutional sign-in page is at `/auth/sign-in`. The home page's quick-role cards remain explicitly local demo access and must not be used as real identity credentials. The current student/admin feature endpoints have not all been migrated to database-backed authorization; only the new `/v1/auth/*` endpoints are wired to the new identity store so far.
