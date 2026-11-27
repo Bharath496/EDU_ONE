@@ -44,6 +44,7 @@ def assessment_client(monkeypatch: pytest.MonkeyPatch):
 
         admin = user("admin@assess.edu", "College Admin")
         faculty = user("faculty@assess.edu", "Faculty")
+        exam_cell = user("exam-cell@assess.edu", "Exam Cell")
         student = user("student@assess.edu", "Student")
         profile = StudentProfile(
             institution_id=college.id, user_id=student.id, registration_number="S001",
@@ -73,7 +74,7 @@ def assessment_client(monkeypatch: pytest.MonkeyPatch):
             ),
         ])
         db.commit()
-        ids = {"college": college.id, "admin": admin.id, "faculty": faculty.id, "student": student.id, "profile": profile.id, "course": course.id}
+        ids = {"college": college.id, "admin": admin.id, "faculty": faculty.id, "exam_cell": exam_cell.id, "student": student.id, "profile": profile.id, "course": course.id}
 
     def override_get_db():
         with Session(engine) as session:
@@ -111,7 +112,8 @@ def test_exam_marks_are_hidden_until_exam_cell_publishes_results(assessment_clie
 
     student_headers = headers(ids["student"], "Student")
     assert client.get("/v1/results/me", headers=student_headers).json() == []
-    published = client.post(f"/v1/exams/{exam_id}/publish-results", headers=admin_headers)
+    exam_cell_headers = headers(ids["exam_cell"], "Exam Cell")
+    published = client.post(f"/v1/exams/{exam_id}/publish-results", headers=exam_cell_headers)
     assert published.status_code == 200
     results = client.get("/v1/results/me", headers=student_headers)
     assert results.status_code == 200
