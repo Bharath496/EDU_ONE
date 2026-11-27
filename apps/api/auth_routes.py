@@ -197,7 +197,7 @@ def logout(
     request: Request,
     response: Response,
     db: Annotated[Session, Depends(get_db)],
-) -> Response:
+) -> None:
     token = request.cookies.get(REFRESH_COOKIE)
     if token:
         db.execute(
@@ -210,7 +210,6 @@ def logout(
         )
         db.commit()
     response.delete_cookie(REFRESH_COOKIE, path="/v1/auth", secure=_cookie_secure(), httponly=True, samesite="lax")
-    return response
 
 
 @router.get("/me")
