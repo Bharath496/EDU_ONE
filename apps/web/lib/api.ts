@@ -512,6 +512,11 @@ class ApiClient {
     return response.data
   }
 
+  async getPendingFeePayments() {
+    const response = await this.client.get('/v1/fees/payments/pending')
+    return response.data
+  }
+
   getClient(): AxiosInstance {
     return this.client
   }
