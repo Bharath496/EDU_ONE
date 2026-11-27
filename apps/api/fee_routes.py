@@ -223,6 +223,37 @@ def create_payment_request(
     return {"id": payment.id, "invoice_id": invoice.id, "amount": float(amount), "status": payment.status}
 
 
+@router.get("/payments/pending")
+def list_pending_payments(
+    principal: Annotated[AuthPrincipal, Depends(get_current_principal)],
+    db: Annotated[Session, Depends(get_db)],
+) -> list[dict]:
+    try:
+        authorize(principal.access_context, permission="finance.payment.record", resource_institution_id=principal.institution.id)
+    except AuthorizationError as exc:
+        raise HTTPException(status_code=403, detail="Only authorized finance staff can view pending payments") from exc
+    rows = db.execute(
+        select(FeePayment, FeeInvoice, StudentProfile, User)
+        .join(FeeInvoice, FeeInvoice.id == FeePayment.invoice_id)
+        .join(StudentProfile, StudentProfile.id == FeeInvoice.student_profile_id)
+        .join(User, User.id == StudentProfile.user_id)
+        .where(
+            FeePayment.institution_id == principal.institution.id,
+            FeePayment.status == "pending",
+        )
+        .order_by(FeePayment.created_at)
+    ).all()
+    return [{
+        "id": payment.id, "invoice_id": invoice.id,
+        "invoice_number": invoice.invoice_number, "fee_type": invoice.fee_type,
+        "student_profile_id": profile.id, "student_name": user.full_name,
+        "registration_number": profile.registration_number,
+        "amount": float(payment.amount), "method": payment.method,
+        "payment_reference": payment.payment_reference,
+        "created_at": payment.created_at.isoformat(),
+    } for payment, invoice, profile, user in rows]
+
+
 @router.post("/payments/{payment_id}/verify")
 def verify_payment(
     payment_id: str,
