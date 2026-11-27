@@ -74,6 +74,7 @@ class StudentProfile(Base):
     department_id: Mapped[str | None] = mapped_column(String(36))
     programme: Mapped[str | None] = mapped_column(String(120))
     semester: Mapped[int | None] = mapped_column()
+    class_id: Mapped[str | None] = mapped_column(String(36))
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
 
