@@ -114,6 +114,7 @@ export default function InstitutionalWorkspacePage() {
             {user?.role === 'College Admin' && <Link href="/institutional/users" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Manage users</Link>}
             {['Placement Officer', 'College Admin'].includes(user?.role || '') && <Link href="/institutional/placements" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Manage placements</Link>}
             {['Accounts', 'College Admin'].includes(user?.role || '') && <Link href="/institutional/finance" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Finance</Link>}
+            {['Student', 'Librarian', 'College Admin'].includes(user?.role || '') && <Link href="/institutional/library" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Library</Link>}
             {['Faculty', 'College Admin', 'HOD', 'Class Advisor'].includes(user?.role || '') && <Link href="/institutional/attendance" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Mark attendance</Link>}
             <Button variant="outline" onClick={signOut} className="gap-2"><LogOut className="h-4 w-4" /> Sign out</Button>
           </div>
