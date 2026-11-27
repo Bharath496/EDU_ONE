@@ -51,6 +51,8 @@ def student_client(monkeypatch: pytest.MonkeyPatch):
         parent = add_user("parent@college.edu", "Parent")
         hod = add_user("hod@college.edu", "HOD")
         faculty = add_user("faculty@college.edu", "Faculty")
+        exam_cell = add_user("exam@college.edu", "Exam Cell")
+        placement = add_user("placement@college.edu", "Placement Officer")
         outsider = add_user("outsider@other.edu", "Student", other_college.id)
 
         profile1 = StudentProfile(
@@ -95,7 +97,8 @@ def student_client(monkeypatch: pytest.MonkeyPatch):
         ids = {
             "college": college.id, "admin": admin.id, "student1": student1.id,
             "student2": student2.id, "student3": student3.id, "parent": parent.id,
-            "hod": hod.id, "faculty": faculty.id, "course1": course1.id,
+            "hod": hod.id, "faculty": faculty.id, "exam_cell": exam_cell.id,
+            "placement": placement.id, "course1": course1.id,
             "profile1": profile1.id, "profile2": profile2.id,
             "other_profile": other_profile.id,
         }
@@ -196,3 +199,11 @@ def test_faculty_student_roster_is_limited_to_assigned_courses(student_client) -
     denied = client.get(f"/v1/students/{ids['profile2']}", headers=faculty_headers)
     assert allowed.status_code == 200
     assert denied.status_code == 403
+
+
+@pytest.mark.parametrize("role_key", ["exam_cell", "placement"])
+def test_designated_staff_can_read_student_records_when_role_grants_it(student_client, role_key: str) -> None:
+    client, ids, headers = student_client
+    response = client.get("/v1/students", headers=headers(ids[role_key], "Exam Cell" if role_key == "exam_cell" else "Placement Officer"))
+    assert response.status_code == 200
+    assert response.json()["total"] == 2
