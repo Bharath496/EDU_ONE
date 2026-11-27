@@ -70,6 +70,10 @@ def assessment_client(monkeypatch: pytest.MonkeyPatch):
             ),
             StaffAssignment(
                 institution_id=college.id, user_id=faculty.id, scope_type="course",
+                scope_id=course.id, permission="marks.read",
+            ),
+            StaffAssignment(
+                institution_id=college.id, user_id=faculty.id, scope_type="course",
                 scope_id=course.id, permission="assignments.manage",
             ),
         ])
