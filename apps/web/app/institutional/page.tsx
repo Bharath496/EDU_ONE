@@ -112,6 +112,7 @@ export default function InstitutionalWorkspacePage() {
           <div><p className="text-xs font-semibold uppercase tracking-wider text-indigo-600">Institutional workspace</p><h1 className="mt-1 text-xl font-bold text-slate-950">{user?.collegeName || 'EDU_ONE'}</h1><p className="mt-1 text-sm text-slate-500">{user?.name} · {user?.role}</p></div>
           <div className="flex items-center gap-2">
             {user?.role === 'College Admin' && <Link href="/institutional/users" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Manage users</Link>}
+            {user?.role === 'College Admin' && <Link href="/institutional/audit" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Audit history</Link>}
             {['Placement Officer', 'College Admin'].includes(user?.role || '') && <Link href="/institutional/placements" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Manage placements</Link>}
             {['Accounts', 'College Admin'].includes(user?.role || '') && <Link href="/institutional/finance" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Finance</Link>}
             {['Student', 'Librarian', 'College Admin'].includes(user?.role || '') && <Link href="/institutional/library" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Library</Link>}
