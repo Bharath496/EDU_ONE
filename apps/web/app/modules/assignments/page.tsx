@@ -33,9 +33,9 @@ export default function AssignmentsPage() {
   const [open, setOpen] = useState(false)
   const canManage = user?.role === 'College Admin' || user?.role === 'Faculty'
   const canSubmit = user?.role === 'Student'
-  const matchedStudent =
-    students.find((student) => student.name.toLowerCase() === user?.name.toLowerCase()) ??
-    students[0]
+  const matchedStudent = user?.studentId
+    ? students.find((student) => student.id === user.studentId)
+    : undefined
 
   const [form, setForm] = useState({
     title: '',
