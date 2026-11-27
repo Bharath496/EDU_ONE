@@ -89,6 +89,9 @@ def test_student_payment_stays_pending_until_accounts_verifies(fee_client) -> No
     })
     assert payment.status_code == 201
     assert payment.json()["status"] == "pending"
+    pending = client.get("/v1/fees/payments/pending", headers=headers(ids["accounts"], "Accounts"))
+    assert pending.status_code == 200
+    assert pending.json()[0]["student_profile_id"] == ids["profile"]
     invoice = client.get(f"/v1/fees/invoices/{ids['invoice']}", headers=student_headers)
     assert invoice.json()["status"] == "issued"
     assert invoice.json()["outstanding_amount"] == 50000
