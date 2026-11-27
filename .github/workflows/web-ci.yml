@@ -66,3 +66,26 @@ jobs:
 
       - name: Build API container
         run: docker build --tag eduone-api:ci apps/api
+
+      - name: Start PostgreSQL and API integration stack
+        env:
+          POSTGRES_PASSWORD: ci-url-safe-password
+          JWT_SECRET_KEY: ci-only-secret-with-at-least-32-bytes
+        run: |
+          docker compose up --build -d
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://localhost:8000/ready; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose ps
+          docker compose logs
+          exit 1
+
+      - name: Stop integration stack
+        if: always()
+        env:
+          POSTGRES_PASSWORD: ci-url-safe-password
+          JWT_SECRET_KEY: ci-only-secret-with-at-least-32-bytes
+        run: docker compose down --volumes
