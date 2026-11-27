@@ -67,6 +67,10 @@ def test_login_sets_http_only_refresh_cookie_and_returns_short_lived_access_toke
     assert "httponly" in cookie
     assert "secure" in cookie
     assert "samesite=none" in cookie
+    assert response.headers["cache-control"] == "no-store"
+    assert response.headers["x-content-type-options"] == "nosniff"
+    assert response.headers["x-frame-options"] == "DENY"
+    assert response.headers["referrer-policy"] == "no-referrer"
 
 
 def test_login_uses_generic_error_for_invalid_credentials(auth_client) -> None:
