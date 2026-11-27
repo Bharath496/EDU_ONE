@@ -51,3 +51,9 @@ jobs:
 
       - name: Test API
         run: python -m pytest apps/api -q
+
+      - name: Validate database migration
+        run: alembic upgrade head
+        working-directory: apps/api
+        env:
+          DATABASE_URL: sqlite:///./ci.db
