@@ -117,6 +117,7 @@ export default function InstitutionalWorkspacePage() {
             {['Student', 'Librarian', 'College Admin'].includes(user?.role || '') && <Link href="/institutional/library" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Library</Link>}
             {['Student', 'Parent', 'Support Staff', 'College Admin', 'Principal', 'Vice Principal'].includes(user?.role || '') && <Link href="/institutional/support" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Support</Link>}
             <Link href="/institutional/announcements" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Announcements</Link>
+            {['Student', 'Faculty', 'Exam Cell', 'College Admin', 'HOD', 'Class Advisor'].includes(user?.role || '') && <Link href="/institutional/academics" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Academics</Link>}
             {['Faculty', 'College Admin', 'HOD', 'Class Advisor'].includes(user?.role || '') && <Link href="/institutional/attendance" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Mark attendance</Link>}
             <Button variant="outline" onClick={signOut} className="gap-2"><LogOut className="h-4 w-4" /> Sign out</Button>
           </div>
