@@ -112,3 +112,28 @@ The repository is a useful UI and workflow prototype, but it is not safe to use 
 ## Release gate
 
 Do not connect real student/staff records or use this build for real fee collection, examination publication, attendance decisions or institutional operations until authentication, authorization, tenant isolation, persistence, backups, audit logging and security tests are implemented and independently verified.
+
+
+## Follow-up implementation status — 27 November 2026
+
+Work has started on `know-envi-rebuild`; `main` remains unchanged. The following foundations have been added after the original audit:
+
+- **Demo safety lock:** all legacy business routes are disabled by default. They respond with `503 DEMO_API_DISABLED` unless `EDUONE_DEMO_MODE=true` is explicitly set for local demo use. Root/health/docs and the new versioned institutional API remain available.
+- **Database foundation:** SQLAlchemy models now cover institutions, users, role grants, student profiles, verified parent/student links, staff scope assignments, refresh sessions and audit events. Database connection requires `DATABASE_URL`; schema setup uses Alembic rather than application-startup table creation.
+- **Authentication foundation:** `/v1/auth/login`, `/v1/auth/refresh`, `/v1/auth/logout` and `/v1/auth/me` use database users, salted PBKDF2 password hashes, short-lived signed access tokens, hashed rotating refresh tokens in HttpOnly cookies, tenant checks, active-account checks and trusted-origin validation for cookie operations.
+- **Authorization policy:** server-side policy helpers cover institution isolation, own-student access, verified parent links and department/class/course assignments. UI navigation remains a presentation aid, not an access-control boundary.
+- **Student profile API:** a first database-backed module is being added under `/v1/students` for scoped listing, self profile, individual profile reads, admin/admissions creation, admin updates and soft deactivation with audit events.
+- **Frontend auth path:** an institutional sign-in page now uses the versioned API; access tokens are held in memory rather than localStorage, and refresh tokens are not exposed to JavaScript. The existing quick-role demo remains separate and explicitly labelled as demo access.
+- **CI:** branch checks now cover web lint/typecheck/build, the complete API test suite and a SQLite Alembic migration smoke test.
+
+### Verification snapshot
+
+- Baseline frontend lint, typecheck and build passed in run [45894015829](https://github.com/Bharath496/EDU_ONE/actions/runs/45894015829).
+- API authentication, authorization-policy, password/token and database-migration tests passed in later CI runs; the auth route test suite includes refresh rotation, logout revocation and trusted-origin checks.
+- The current student-profile API change is under CI verification in run [45950208117](https://github.com/Bharath496/EDU_ONE/actions/runs/45950208117). Do not treat that module as verified until the run completes successfully.
+
+### Remaining release blockers
+
+This is still **not production-ready**. No managed PostgreSQL instance, production secrets, object storage, email/SMS provider, payment gateway, deployment environment, backups or monitoring have been provisioned. The legacy attendance, exams, marks, fees, library, communication, reports, HR, admissions, hostel, transport and analytics routes have not yet been migrated to the new database and authorization layer. Password reset, account lockout/rate limiting, MFA, full session revocation for already-issued access tokens, file malware scanning, privacy/retention workflows, disaster recovery and an independent security review remain open. The existing static GitHub Pages deployment cannot host the FastAPI/PostgreSQL backend.
+
+**Safety rule remains:** do not enable the demo API flag on a public deployment, import real institutional data, or use the current app for attendance decisions, examination records, fee settlement or official college operations until the remaining modules and release gates are implemented and verified.
