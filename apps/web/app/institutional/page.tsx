@@ -21,6 +21,8 @@ export default function InstitutionalWorkspacePage() {
   const [data, setData] = useState<Data>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const [applyingId, setApplyingId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     if (!user || !token || token === 'demo-session') return
@@ -72,6 +74,21 @@ export default function InstitutionalWorkspacePage() {
     void load()
   }, [isAuthenticated, isLoading, load, router, token, user])
 
+  const applyToOpportunity = async (opportunityId: string) => {
+    setApplyingId(opportunityId)
+    setError('')
+    setSuccess('')
+    try {
+      await api.applyToPlacement(opportunityId, 'Application submitted through the institutional workspace.')
+      setSuccess('Your placement application was submitted.')
+      await load()
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || 'Unable to submit this application.')
+    } finally {
+      setApplyingId(null)
+    }
+  }
+
   const signOut = async () => {
     try { await api.logout() } catch { /* Clear local state if the API is offline. */ }
     clearAuth()
@@ -100,7 +117,8 @@ export default function InstitutionalWorkspacePage() {
         </div>
       </header>
       <div className="mx-auto max-w-7xl px-5 py-8">
-        {error && <div role="status" className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{error}</div>}
+        {error && <div role="alert" className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{error}</div>}
+        {success && <div role="status" className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{success}</div>}
         <h2 className="text-2xl font-bold text-slate-950">Live institutional records</h2>
         <p className="mt-1 text-sm text-slate-500">This page reads from the database-backed API. It never substitutes demo records when a live module is unavailable.</p>
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
@@ -118,7 +136,7 @@ export default function InstitutionalWorkspacePage() {
         {data.results && <Card className="mt-6"><CardContent className="p-5"><h3 className="font-semibold">Published results</h3><div className="mt-3 space-y-2">{data.results.map(row => <div key={row.id} className="flex justify-between text-sm"><span>{row.exam_title}</span><span>{row.marks_obtained}/{row.max_marks} · {row.grade || '—'}</span></div>)}</div></CardContent></Card>}
         {data.timetable && <Card className="mt-6"><CardContent className="p-5"><h3 className="font-semibold">Timetable</h3><div className="mt-3 space-y-2">{data.timetable.slice(0, 10).map(row => <div key={row.id} className="flex justify-between gap-3 border-b border-slate-100 pb-2 text-sm"><span>{row.course_title} · {row.room || 'Room TBA'}</span><span className="text-slate-500">{['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][row.weekday]} {row.start_time}–{row.end_time}</span></div>)}{data.timetable.length === 0 && <p className="text-sm text-slate-500">No timetable slots are active today.</p>}</div></CardContent></Card>}
         {data.calendar && <Card className="mt-6"><CardContent className="p-5"><h3 className="font-semibold">Academic calendar</h3><div className="mt-3 space-y-2">{data.calendar.slice(0, 10).map(row => <div key={row.id} className="flex justify-between gap-3 border-b border-slate-100 pb-2 text-sm"><span>{row.title} · {row.event_type}</span><span className="text-slate-500">{new Date(row.start_at).toLocaleDateString()}</span></div>)}{data.calendar.length === 0 && <p className="text-sm text-slate-500">No upcoming calendar events.</p>}</div></CardContent></Card>}
-        {data.opportunities && <Card className="mt-6"><CardContent className="p-5"><h3 className="font-semibold">Placement opportunities</h3><div className="mt-3 space-y-3">{data.opportunities.slice(0, 8).map(row => <div key={row.id} className="border-b border-slate-100 pb-2 text-sm"><div className="flex justify-between gap-3"><span className="font-medium">{row.title} · {row.company}</span><span className="text-slate-500">{row.employment_type}</span></div><p className="mt-1 text-slate-500">Apply by {new Date(row.application_deadline).toLocaleDateString()}</p></div>)}{data.opportunities.length === 0 && <p className="text-sm text-slate-500">No active opportunities.</p>}</div></CardContent></Card>}
+        {data.opportunities && <Card className="mt-6"><CardContent className="p-5"><h3 className="font-semibold">Placement opportunities</h3><div className="mt-3 space-y-3">{data.opportunities.slice(0, 8).map(row => <div key={row.id} className="flex items-start justify-between gap-4 border-b border-slate-100 pb-3 text-sm"><div><div className="flex flex-wrap gap-2"><span className="font-medium">{row.title} · {row.company}</span><span className="text-slate-500">{row.employment_type}</span></div><p className="mt-1 text-slate-500">Apply by {new Date(row.application_deadline).toLocaleDateString()}</p><p className="mt-1 text-slate-600">{row.eligibility_text}</p></div>{user?.role === 'Student' && <Button size="sm" onClick={() => void applyToOpportunity(row.id)} disabled={applyingId === row.id}>{applyingId === row.id ? 'Applying...' : 'Apply'}</Button>}</div>)}{data.opportunities.length === 0 && <p className="text-sm text-slate-500">No active opportunities.</p>}</div></CardContent></Card>}
         {data.applications && <Card className="mt-6"><CardContent className="p-5"><h3 className="font-semibold">My placement applications</h3><div className="mt-3 space-y-2">{data.applications.map(row => <div key={row.id} className="flex justify-between text-sm"><span>{row.company} · {row.opportunity_title}</span><span className="text-slate-500">{row.status}</span></div>)}{data.applications.length === 0 && <p className="text-sm text-slate-500">No applications submitted yet.</p>}</div></CardContent></Card>}
         <div className="mt-8 flex justify-end"><Button variant="outline" onClick={() => void load()}>Refresh records</Button></div>
       </div>
