@@ -62,7 +62,7 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
         "academics.read", "students.read", "reports.read",
     }),
     "Accounts": frozenset({
-        "fees.read", "fees.manage", "finance.payment.record", "reports.finance.read",
+        "fees.read", "fees.manage", "finance.payment.record", "reports.finance.read", "students.read",
     }),
     "Librarian": frozenset({"library.read", "library.manage", "students.read"}),
     "Placement Officer": frozenset({"placements.read", "placements.manage", "students.read", "reports.read"}),
