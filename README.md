@@ -437,3 +437,12 @@ The database-backed student API is available under `/v1/students` and requires a
 The backend now includes versioned, tenant-scoped APIs for course catalogue and enrolments, attendance sessions and records, exams, result entry/publication, assignments and submissions, invoices and payment verification. Faculty actions require course assignments; HOD and class-advisor access is scoped to their department/class; students are restricted to their own enrolled records; parents require a verified student link. Exam results remain hidden until the Exam Cell or College Admin publishes them. Attendance records can be locked after marking.
 
 Fee requests are deliberately **not** treated as successful payments. A student/parent request creates a pending record only. An Accounts user or College Admin must verify it before the invoice balance changes. This is a manual/offline verification workflow, not a payment-gateway integration; no payment provider or webhook is configured. Never treat a client-provided UPI/bank reference as proof of settlement.
+
+
+## User provisioning and first administrator
+
+The first College Admin is created with the one-time `apps/api/bootstrap_admin.py` command after database migrations. The command refuses to run without `BOOTSTRAP_CONFIRM=YES` and refuses to add a first administrator to an institution that already has users. Supply the institution name/code, administrator name/email and a strong password through temporary environment variables; never put those values in Git. Remove the bootstrap variables immediately after running it.
+
+After the first administrator signs in, `/v1/users` can create institution-level accounts for student, parent, faculty, HOD, class advisor, principal, vice principal, Exam Cell, Accounts and other supported staff roles. College Admin and Super Admin cannot be created through this ordinary endpoint. Course/class staff assignments are explicit server-side records. Parent/student relationships start unverified and must be verified by an administrator before parent access is granted.
+
+This initial provisioning workflow sets passwords directly; invitation email, password reset, MFA, self-service account recovery and account lockout/rate limiting are still outstanding. Do not distribute passwords through insecure channels.
