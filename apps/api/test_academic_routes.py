@@ -124,6 +124,15 @@ def test_assigned_faculty_can_create_and_mark_attendance(academic_client) -> Non
     })
     assert marked.status_code == 200
     assert marked.json()["created"] == 2
+    retry = client.post(f"/v1/attendance/sessions/{session_id}/records", headers=faculty_headers, json={
+        "records": [
+            {"student_profile_id": ids["profile1"], "status": "present"},
+            {"student_profile_id": ids["profile2"], "status": "absent"},
+        ],
+    })
+    assert retry.status_code == 200
+    assert retry.json()["created"] == 0
+    assert retry.json()["already_saved"] is True
 
     student_headers = headers(ids["student1"], "Student")
     own = client.get("/v1/attendance/me", headers=student_headers)
