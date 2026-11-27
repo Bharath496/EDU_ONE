@@ -170,5 +170,8 @@ def student_risk_report(
         "page": page,
         "limit": limit,
         "summary": summary,
-        "disclaimer": "This is a transparent early-support signal, not a diagnosis or an automated decision. Missing records are reported as insufficient data, not zero. Staff must review context with the student before taking action.",
+        "summary_scope": "current_page",
+        "risk_score_max": 6,
+        "signal_basis": ["attendance in locked sessions", "marks from published exams"],
+        "disclaimer": "This is a transparent early-support signal, not a diagnosis or an automated decision. Missing records are reported as insufficient data, not zero. Performance trends and personal context are not inferred. Staff must review context with the student before taking action.",
     }
