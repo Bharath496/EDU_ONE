@@ -192,12 +192,11 @@ def refresh(
     }
 
 
-@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT, response_class=Response)
 def logout(
     request: Request,
-    response: Response,
     db: Annotated[Session, Depends(get_db)],
-) -> None:
+) -> Response:
     token = request.cookies.get(REFRESH_COOKIE)
     if token:
         db.execute(
@@ -209,7 +208,9 @@ def logout(
             .values(revoked_at=datetime.now(timezone.utc))
         )
         db.commit()
+    response = Response(status_code=status.HTTP_204_NO_CONTENT)
     response.delete_cookie(REFRESH_COOKIE, path="/v1/auth", secure=_cookie_secure(), httponly=True, samesite="lax")
+    return response
 
 
 @router.get("/me")
