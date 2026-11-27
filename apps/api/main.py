@@ -10,6 +10,10 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+
+from database import get_engine
 
 from auth_routes import router as institutional_auth_router
 from student_routes import router as student_router
@@ -36,7 +40,7 @@ app = FastAPI(
 # disabled unless a developer explicitly opts into demo mode. This prevents
 # accidental exposure of demo identities and mutable demo records on a deploy.
 DEMO_MODE_ENV = "EDUONE_DEMO_MODE"
-DEMO_SAFE_PATHS = {"/", "/health", "/openapi.json", "/docs", "/docs/oauth2-redirect", "/redoc"}
+DEMO_SAFE_PATHS = {"/", "/health", "/ready", "/openapi.json", "/docs", "/docs/oauth2-redirect", "/redoc"}
 
 
 @app.middleware("http")
@@ -373,12 +377,24 @@ def find_or_404(rows: list[dict[str, Any]], item_id: str, label: str) -> dict[st
 
 @app.get("/")
 def root() -> dict[str, str]:
-    return {"name": "EDU_ONE API", "version": "0.5.0", "docs": "/docs", "mode": "in-memory demo"}
+    return {"name": "EDU_ONE API", "version": "0.6.0", "docs": "/docs", "mode": "institutional API; legacy demo routes disabled by default"}
 
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "mode": "demo"}
+    """Liveness probe; does not imply database connectivity."""
+    return {"status": "ok"}
+
+
+@app.get("/ready")
+def readiness() -> dict[str, str]:
+    """Readiness probe for deployments that require the institutional database."""
+    try:
+        with get_engine().connect() as connection:
+            connection.execute(text("SELECT 1"))
+    except (RuntimeError, SQLAlchemyError) as exc:
+        raise HTTPException(status_code=503, detail="Database is not ready") from exc
+    return {"status": "ready", "database": "connected"}
 
 
 @app.post("/auth/login")
