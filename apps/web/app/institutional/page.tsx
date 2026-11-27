@@ -11,7 +11,7 @@ import { useAuthStore } from '@/lib/auth-store'
 
 type Data = {
   profile?: any; attendance?: any; students?: any[]; courses?: any[]
-  exams?: any[]; assignments?: any[]; fees?: any[]; results?: any[]
+  exams?: any[]; assignments?: any[]; fees?: any[]; results?: any[]; timetable?: any[]; calendar?: any[]
 }
 const items = (value: any) => Array.isArray(value) ? value : Array.isArray(value?.items) ? value.items : []
 
@@ -37,6 +37,8 @@ export default function InstitutionalWorkspacePage() {
       add(api.getInstitutionalCourses(), 'courses')
       add(api.getInstitutionalExams(), 'exams')
       add(api.getInstitutionalAssignments(), 'assignments')
+      add(api.getMyTimetable(), 'timetable')
+      add(api.getInstitutionalCalendar(), 'calendar')
       add(api.getInstitutionalFees(), 'fees')
     } else {
       if (['College Admin', 'Principal', 'Vice Principal', 'HOD', 'Class Advisor', 'Admissions', 'Parent'].includes(user.role)) add(api.getInstitutionalStudents(), 'students')
@@ -46,6 +48,8 @@ export default function InstitutionalWorkspacePage() {
       }
       if (['College Admin', 'Principal', 'Vice Principal', 'HOD', 'Class Advisor', 'Faculty', 'Student', 'Parent'].includes(user.role)) add(api.getInstitutionalAssignments(), 'assignments')
       if (['College Admin', 'Principal', 'Accounts', 'Parent'].includes(user.role)) add(api.getInstitutionalFees(), 'fees')
+      if (user.role === 'Faculty') add(api.getFacultyTimetable(), 'timetable')
+      add(api.getInstitutionalCalendar(), 'calendar')
     }
     const settled = await Promise.allSettled(jobs)
     const failed = settled.filter(result => result.status === 'rejected')
@@ -109,6 +113,8 @@ export default function InstitutionalWorkspacePage() {
           {data.fees && <Card><CardContent className="p-5"><div className="flex items-center gap-2 font-semibold"><IndianRupee className="h-4 w-4" /> Fee invoices</div><div className="mt-4 space-y-3">{data.fees.slice(0, 8).map(row => <div key={row.id} className="flex justify-between gap-3 border-b border-slate-100 pb-2 text-sm"><span>{row.fee_type}</span><span className="text-slate-500">₹{row.outstanding_amount} · {row.status}</span></div>)}</div></CardContent></Card>}
         </div>
         {data.results && <Card className="mt-6"><CardContent className="p-5"><h3 className="font-semibold">Published results</h3><div className="mt-3 space-y-2">{data.results.map(row => <div key={row.id} className="flex justify-between text-sm"><span>{row.exam_title}</span><span>{row.marks_obtained}/{row.max_marks} · {row.grade || '—'}</span></div>)}</div></CardContent></Card>}
+        {data.timetable && <Card className="mt-6"><CardContent className="p-5"><h3 className="font-semibold">Timetable</h3><div className="mt-3 space-y-2">{data.timetable.slice(0, 10).map(row => <div key={row.id} className="flex justify-between gap-3 border-b border-slate-100 pb-2 text-sm"><span>{row.course_title} · {row.room || 'Room TBA'}</span><span className="text-slate-500">{['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][row.weekday]} {row.start_time}–{row.end_time}</span></div>)}{data.timetable.length === 0 && <p className="text-sm text-slate-500">No timetable slots are active today.</p>}</div></CardContent></Card>}
+        {data.calendar && <Card className="mt-6"><CardContent className="p-5"><h3 className="font-semibold">Academic calendar</h3><div className="mt-3 space-y-2">{data.calendar.slice(0, 10).map(row => <div key={row.id} className="flex justify-between gap-3 border-b border-slate-100 pb-2 text-sm"><span>{row.title} · {row.event_type}</span><span className="text-slate-500">{new Date(row.start_at).toLocaleDateString()}</span></div>)}{data.calendar.length === 0 && <p className="text-sm text-slate-500">No upcoming calendar events.</p>}</div></CardContent></Card>}
         <div className="mt-8 flex justify-end"><Button variant="outline" onClick={() => void load()}>Refresh records</Button></div>
       </div>
     </main>
