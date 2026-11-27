@@ -32,7 +32,7 @@ export default function InstitutionalLibraryPage() {
   const load = useCallback(async () => {
     setLoading(true); setError('')
     try {
-      const bookResponse = await api.getLibraryBooks({ limit: 100 })
+      const bookResponse = await api.getInstitutionalLibraryBooks({ limit: 100 })
       setBooks(bookResponse.items || [])
       if (manager) {
         const [loanRows, studentResponse] = await Promise.all([
