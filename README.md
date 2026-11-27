@@ -21,6 +21,7 @@ The institutional API requires `DATABASE_URL` and a strong `JWT_SECRET_KEY`. Run
 
 - [Current implementation status and release gates](docs/PROJECT_STATUS.md)
 - [Institutional role and data-scope matrix](docs/ROLE_ACCESS_MATRIX.md)
+- [Student early-support analytics policy and calculation](docs/STUDENT_ANALYTICS.md)
 - [Local PostgreSQL/API development setup](docs/LOCAL_DEVELOPMENT.md)
 - [Original source-level engineering audit](docs/KNOW_ENVI_ENGINEERING_AUDIT.md)
 
