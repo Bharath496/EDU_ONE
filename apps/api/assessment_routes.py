@@ -189,6 +189,34 @@ def publish_exam(
     return _exam_dict(exam)
 
 
+@exam_router.get("/{exam_id}/results")
+def list_exam_results(
+    exam_id: str,
+    principal: Annotated[AuthPrincipal, Depends(get_current_principal)],
+    db: Annotated[Session, Depends(get_db)],
+) -> list[dict]:
+    exam = db.scalar(select(Exam).where(
+        Exam.id == exam_id, Exam.institution_id == principal.institution.id,
+    ))
+    if exam is None:
+        raise HTTPException(status_code=404, detail="Exam not found")
+    course = _load_course(db, principal, exam.course_id)
+    _authorize_course(principal, course, "marks.read")
+    rows = db.execute(
+        select(ExamResult, StudentProfile, User)
+        .join(StudentProfile, StudentProfile.id == ExamResult.student_profile_id)
+        .join(User, User.id == StudentProfile.user_id)
+        .where(ExamResult.institution_id == principal.institution.id, ExamResult.exam_id == exam.id)
+        .order_by(StudentProfile.registration_number)
+    ).all()
+    return [{
+        "id": result.id, "student_profile_id": profile.id,
+        "registration_number": profile.registration_number, "student_name": user.full_name,
+        "marks_obtained": float(result.marks_obtained), "grade": result.grade,
+        "remarks": result.remarks, "is_published": result.is_published,
+    } for result, profile, user in rows]
+
+
 @exam_router.post("/{exam_id}/results")
 def enter_exam_results(
     exam_id: str,
@@ -367,6 +395,39 @@ def create_assignment(
     db.commit()
     db.refresh(assignment)
     return _assignment_dict(assignment)
+
+
+@assignment_router.get("/{assignment_id}/submissions")
+def list_assignment_submissions(
+    assignment_id: str,
+    principal: Annotated[AuthPrincipal, Depends(get_current_principal)],
+    db: Annotated[Session, Depends(get_db)],
+) -> list[dict]:
+    assignment = db.scalar(select(Assignment).where(
+        Assignment.id == assignment_id, Assignment.institution_id == principal.institution.id,
+    ))
+    if assignment is None:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    course = _load_course(db, principal, assignment.course_id)
+    _authorize_course(principal, course, "marks.read")
+    rows = db.execute(
+        select(AssignmentSubmission, StudentProfile, User)
+        .join(StudentProfile, StudentProfile.id == AssignmentSubmission.student_profile_id)
+        .join(User, User.id == StudentProfile.user_id)
+        .where(
+            AssignmentSubmission.institution_id == principal.institution.id,
+            AssignmentSubmission.assignment_id == assignment.id,
+        )
+        .order_by(AssignmentSubmission.submitted_at)
+    ).all()
+    return [{
+        "id": submission.id, "student_profile_id": profile.id,
+        "registration_number": profile.registration_number, "student_name": user.full_name,
+        "content": submission.content, "status": submission.status,
+        "submitted_at": submission.submitted_at.isoformat(),
+        "marks_obtained": float(submission.marks_obtained) if submission.marks_obtained is not None else None,
+        "feedback": submission.feedback,
+    } for submission, profile, user in rows]
 
 
 @assignment_router.post("/{assignment_id}/submissions", status_code=status.HTTP_201_CREATED)
