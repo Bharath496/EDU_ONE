@@ -119,6 +119,9 @@ export default function InstitutionalTimetablePage() {
 
   const canViewTimetable = user.role === 'Student' || user.role === 'Faculty'
   const canViewLinkedTimetable = user.role === 'Parent'
+  const timetableCount = canViewLinkedTimetable
+    ? linkedTimetables.reduce((total, child) => total + child.slots.length, 0)
+    : slots.length
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -143,9 +146,9 @@ export default function InstitutionalTimetablePage() {
           <div className="mb-4 flex items-end justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold text-slate-950">Weekly timetable</h2>
-              <p className="mt-1 text-sm text-slate-500">{canViewTimetable ? 'Current timetable for your class or assigned courses.' : 'A personal class timetable is available to student and faculty accounts.'}</p>
+              <p className="mt-1 text-sm text-slate-500">{canViewTimetable ? 'Current timetable for your class or assigned courses.' : canViewLinkedTimetable ? 'Timetables for students linked and verified by your institution.' : 'A personal class timetable is available to student and faculty accounts.'}</p>
             </div>
-            <span className="text-xs text-slate-500">{slots.length} active slots</span>
+            <span className="text-xs text-slate-500">{timetableCount} active slots</span>
           </div>
           {canViewTimetable ? (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
