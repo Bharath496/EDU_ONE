@@ -5,6 +5,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 class ApiClient {
   private client: AxiosInstance
   private refreshTokenPromise: Promise<string> | null = null
+  private accessToken: string | null = null
 
   constructor() {
     this.client = axios.create({
@@ -13,14 +14,14 @@ class ApiClient {
         'Content-Type': 'application/json',
       },
       timeout: 30000,
+      withCredentials: true,
     })
 
     this.client.interceptors.request.use(
       (config: InternalAxiosRequestConfig) => {
         if (typeof window !== 'undefined') {
-          const token = localStorage.getItem('access_token')
-          if (token) {
-            config.headers.Authorization = `Bearer ${token}`
+          if (this.accessToken) {
+            config.headers.Authorization = `Bearer ${this.accessToken}`
           }
         }
         return config
@@ -52,23 +53,19 @@ class ApiClient {
     )
   }
 
-  private async refreshAccessToken(): Promise<string> {
-    if (this.refreshTokenPromise) {
-      return this.refreshTokenPromise
-    }
+  setAccessToken(token: string | null) {
+    this.accessToken = token
+  }
 
-    const refreshToken = localStorage.getItem('refresh_token')
-    if (!refreshToken) {
-      throw new Error('No refresh token available')
-    }
+  private async refreshAccessToken(): Promise<string> {
+    if (this.refreshTokenPromise) return this.refreshTokenPromise
 
     this.refreshTokenPromise = axios
-      .post(`${API_BASE_URL}/auth/refresh`, { refresh_token: refreshToken })
+      .post(`${API_BASE_URL}/v1/auth/refresh`, {}, { withCredentials: true, timeout: 10000 })
       .then((response) => {
-        const { access_token, refresh_token: newRefreshToken } = response.data
-        localStorage.setItem('access_token', access_token)
-        localStorage.setItem('refresh_token', newRefreshToken)
-        return access_token
+        const token = response.data.access_token as string
+        this.accessToken = token
+        return token
       })
       .finally(() => {
         this.refreshTokenPromise = null
@@ -77,31 +74,43 @@ class ApiClient {
     return this.refreshTokenPromise
   }
 
-  private clearAuth() {
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('refresh_token')
-    localStorage.removeItem('user')
+  async refreshSession(): Promise<string> {
+    if (!process.env.NEXT_PUBLIC_API_URL && process.env.NODE_ENV !== 'development') {
+      throw new Error('Institutional API is not configured')
+    }
+    return this.refreshAccessToken()
   }
 
-  async login(email: string, password: string, collegeId?: string) {
-    const response = await this.client.post('/auth/login', { email, password, college_id: collegeId })
-    const { access_token, refresh_token, user } = response.data
-    localStorage.setItem('access_token', access_token)
-    localStorage.setItem('refresh_token', refresh_token)
-    localStorage.setItem('user', JSON.stringify(user))
-    return { user, access_token, refresh_token }
+  private clearAuth() {
+    this.accessToken = null
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('refresh_token')
+      localStorage.removeItem('user')
+    }
+  }
+
+  async login(institutionCode: string, email: string, password: string) {
+    const response = await axios.post(
+      `${API_BASE_URL}/v1/auth/login`,
+      { institution_code: institutionCode, email, password },
+      { withCredentials: true, timeout: 15000 }
+    )
+    const { access_token, user } = response.data
+    this.accessToken = access_token
+    return { user, access_token }
   }
 
   async logout() {
     try {
-      await this.client.post('/auth/logout')
+      await axios.post(`${API_BASE_URL}/v1/auth/logout`, {}, { withCredentials: true, timeout: 10000 })
     } finally {
       this.clearAuth()
     }
   }
 
   async getCurrentUser() {
-    const response = await this.client.get('/auth/me')
+    const response = await this.client.get('/v1/auth/me')
     return response.data
   }
 
