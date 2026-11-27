@@ -32,7 +32,7 @@ export default function InstitutionalSupportPage() {
   const load = useCallback(async () => {
     setLoading(true); setError('')
     try {
-      const rows = await api.getSupportTickets()
+      const rows = await api.getInstitutionalSupportTickets()
       setTickets(rows || [])
       if (user?.role === 'Student') {
         const profile = await api.getMyStudentProfile()
@@ -70,7 +70,7 @@ export default function InstitutionalSupportPage() {
   const createTicket = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault(); setSaving(true); setError(''); setSuccess('')
     try {
-      await api.createSupportTicket({ student_profile_id: profileId, category, subject, description })
+      await api.createInstitutionalSupportTicket({ student_profile_id: profileId, category, subject, description })
       setSubject(''); setDescription('')
       setSuccess('Support ticket submitted.')
       await load()
@@ -97,7 +97,7 @@ export default function InstitutionalSupportPage() {
     if (!selectedId) return
     setSaving(true); setError('')
     try {
-      await api.updateSupportTicket(selectedId, { status: nextStatus as 'open' | 'in_progress' | 'resolved' | 'closed', resolution: resolution || undefined })
+      await api.updateInstitutionalSupportTicket(selectedId, { status: nextStatus as 'open' | 'in_progress' | 'resolved' | 'closed', resolution: resolution || undefined })
       await openTicket(selectedId)
       await load()
       setSuccess('Ticket status updated.')
