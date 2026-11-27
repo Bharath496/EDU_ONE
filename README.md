@@ -461,3 +461,8 @@ The API supports institution, department, class and role-targeted announcements 
 ## Timetable and academic calendar
 
 The API includes class timetable slots, faculty assignments, effective dates and overlap checks for both classes and faculty. Students can read their own class timetable, faculty can read their assigned timetable, and staff access is checked against course/class/department scopes. Calendar events can be targeted by role, department or class. These endpoints are live API foundations; a full timetable editor and calendar UI are still to be completed.
+
+
+## Placement opportunities
+
+Placement Officers can publish, close and review opportunities and manage application outcomes. Students can view published opportunities, submit one application per opportunity and track shortlist/interview/selection/rejection status. Eligibility text is currently informational; automated CGPA/programme checks, resume upload/storage, interview scheduling and employer integrations remain open.
