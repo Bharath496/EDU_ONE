@@ -13,7 +13,8 @@ from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import AuthSession, Institution, User
+from models import AuthSession, Institution, ParentStudentLink, StaffAssignment, StudentProfile, User
+from authorization import AccessContext, ROLE_PERMISSIONS
 from security import (
     create_access_token,
     create_refresh_token,
@@ -41,6 +42,7 @@ class AuthPrincipal:
     institution: Institution
     roles: tuple[str, ...]
     claims: dict
+    access_context: AccessContext
 
 
 def _cookie_secure() -> bool:
@@ -128,8 +130,43 @@ def get_current_principal(
     user, institution, roles = _load_active_user(db, claims["sub"])
     if claims.get("tenant_id") != user.institution_id:
         raise HTTPException(status_code=401, detail="Authentication required")
-    # Role claims are informational only. Current role grants always come from DB.
-    return AuthPrincipal(user=user, institution=institution, roles=roles, claims=claims)
+    # Role claims are informational only. Current role grants and scopes always come from DB.
+    assignments = {
+        (item.scope_type, item.scope_id, item.permission)
+        for item in db.scalars(select(StaffAssignment).where(StaffAssignment.user_id == user.id)).all()
+        if item.institution_id == user.institution_id
+    }
+    for role_row in user.roles:
+        if role_row.role == "HOD" and role_row.department_id:
+            assignments.update(
+                ("department", role_row.department_id, permission)
+                for permission in ROLE_PERMISSIONS["HOD"]
+            )
+    own_student_ids = frozenset(db.scalars(
+        select(StudentProfile.id).where(
+            StudentProfile.institution_id == user.institution_id,
+            StudentProfile.user_id == user.id,
+        )
+    ).all())
+    linked_student_ids = frozenset(db.scalars(
+        select(ParentStudentLink.student_profile_id).where(
+            ParentStudentLink.institution_id == user.institution_id,
+            ParentStudentLink.parent_user_id == user.id,
+            ParentStudentLink.is_verified.is_(True),
+        )
+    ).all())
+    access_context = AccessContext(
+        user_id=user.id,
+        institution_id=user.institution_id,
+        roles=frozenset(roles),
+        assignments=frozenset(assignments),
+        own_student_ids=own_student_ids,
+        linked_student_ids=linked_student_ids,
+    )
+    return AuthPrincipal(
+        user=user, institution=institution, roles=roles,
+        claims=claims, access_context=access_context,
+    )
 
 
 @router.post("/login")
