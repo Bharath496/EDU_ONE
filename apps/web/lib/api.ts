@@ -391,7 +391,7 @@ class ApiClient {
     const response = await this.client.post('/v1/attendance/sessions', payload)
     return response.data
   }
-  async markAttendance(sessionId: string, records: Array<{ student_profile_id: string; status: 'present' | 'absent' | 'late' | 'excused'; remarks?: string }>) {
+  async markInstitutionalAttendance(sessionId: string, records: Array<{ student_profile_id: string; status: 'present' | 'absent' | 'late' | 'excused'; remarks?: string }>) {
     const response = await this.client.post(`/v1/attendance/sessions/${sessionId}/records`, { records })
     return response.data
   }
