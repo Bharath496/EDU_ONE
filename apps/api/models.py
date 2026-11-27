@@ -65,7 +65,10 @@ class UserRole(Base):
 
 class StudentProfile(Base):
     __tablename__ = "student_profiles"
-    __table_args__ = (UniqueConstraint("institution_id", "registration_number", name="uq_student_registration"),)
+    __table_args__ = (
+        UniqueConstraint("institution_id", "registration_number", name="uq_student_registration"),
+        Index("ix_student_profiles_class", "institution_id", "class_id"),
+    )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     institution_id: Mapped[str] = mapped_column(ForeignKey("institutions.id", ondelete="RESTRICT"), nullable=False)
