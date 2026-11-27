@@ -28,7 +28,8 @@ The hosted GitHub Pages site remains a static portfolio/demo frontend. It does n
 - Student profiles, course catalogue/enrolments, attendance sessions/records/locking, exams, marks/results publication, assignments/submissions/grading.
 - Fee invoices and pending payment requests. Only authorized finance staff can verify/reject a request; a client-provided reference is not proof of payment.
 - Library catalogue and circulation, announcements/read receipts, support tickets/messages, timetable/calendar and placement opportunity/application endpoints.
-- Audit events for key mutations.
+- Audit events for key mutations plus a College Admin-only, institution-scoped audit reader.
+- Missingness-aware student early-support analytics using locked attendance and published marks, with department/class scoping and a human-review disclaimer.
 - Liveness and database-readiness endpoints.
 - Dockerfile, PostgreSQL Compose stack, migration service and one-time first-admin bootstrap script.
 - CI for frontend lint/typecheck/build, the full API test suite, migration validation, Compose configuration and API container build.
@@ -61,6 +62,7 @@ The verified code commit includes the fee-payment row locking, service-worker ca
 - Payment gateway checkout, signed provider webhooks and reconciliation; current finance verification is manual.
 - Email/SMS/push notification delivery.
 - Formal academic hierarchy administration for departments, programmes, classes, sections and subject assignments.
+- Additional analytics inputs such as trend history, assignment completion and mentor context; current early-support scoring uses only locked attendance and published exam marks.
 - Full UI workflows for all staff designations, plus exam hall tickets/seating, grade-point/CGPA calculation, file-based assignment submission and richer student/parent services.
 - End-to-end, accessibility, load and independent security testing.
 - Institutional privacy/consent, retention/deletion and data-processing policies.
