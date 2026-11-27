@@ -17,7 +17,7 @@ This matrix describes the current institutional API permission model. The server
 | HR | Faculty/HR access. | Read faculty records, manage HR functions and read reports. |
 | Admissions | Institution-scoped admissions access. | Create student profiles and read student records/reports. |
 | Hostel Warden / Transport Coordinator | Service-specific permissions; broad student-directory access is not enabled. | Hostel or transport operations are role grants, but dedicated assignment-scoped student lookup workflows remain to be completed. |
-| Support Staff | Support-ticket access only; no general student-directory access. | Manage assigned/available support tickets and their message threads. |
+| Support Staff | Support-ticket access only; no general student-directory access. | Manage institutional support tickets and their message threads; authorized roles can assign tickets to Support Staff. |
 | Student | Own-record scope. | Read own profile, courses, attendance, published results, assignments, fees, library loans, announcements and placements; create own support tickets and placement applications. |
 | Parent | Verified linked-student scope. | Read only student records explicitly linked and verified by the institution; create support tickets for linked students. |
 
