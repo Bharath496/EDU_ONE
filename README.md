@@ -17,6 +17,13 @@ The institutional API requires `DATABASE_URL` and a strong `JWT_SECRET_KEY`. Run
 
 **Do not use the browser-local demo workspace for real institutional records.**
 
+## Engineering documentation
+
+- [Current implementation status and release gates](docs/PROJECT_STATUS.md)
+- [Institutional role and data-scope matrix](docs/ROLE_ACCESS_MATRIX.md)
+- [Local PostgreSQL/API development setup](docs/LOCAL_DEVELOPMENT.md)
+- [Original source-level engineering audit](docs/KNOW_ENVI_ENGINEERING_AUDIT.md)
+
 ## Live website
 
 GitHub Pages:
@@ -343,27 +350,28 @@ when running in GitHub Actions.
 
 ```text
 EDU_ONE/
-├── .github/
-│   └── workflows/
-│       ├── web-ci.yml
-│       └── deploy-pages.yml
+├── .github/workflows/
+│   ├── web-ci.yml
+│   └── deploy-pages.yml
 ├── apps/
 │   ├── api/
+│   │   ├── migrations/
+│   │   ├── Dockerfile
 │   │   ├── main.py
-│   │   ├── requirements.txt
-│   │   └── test_main.py
+│   │   ├── models.py
+│   │   └── requirements.txt
 │   └── web/
 │       ├── app/
-│       │   ├── admin/
-│       │   ├── auth/
-│       │   ├── dashboard/
-│       │   └── modules/
 │       ├── components/
 │       ├── lib/
 │       └── public/
-│           ├── icon.svg
-│           ├── manifest.webmanifest
-│           └── sw.js
+├── docs/
+│   ├── KNOW_ENVI_ENGINEERING_AUDIT.md
+│   ├── LOCAL_DEVELOPMENT.md
+│   ├── PROJECT_STATUS.md
+│   └── ROLE_ACCESS_MATRIX.md
+├── .env.example
+├── docker-compose.yml
 ├── package.json
 └── LICENSE
 ```
