@@ -466,3 +466,6 @@ The API includes class timetable slots, faculty assignments, effective dates and
 ## Placement opportunities
 
 Placement Officers can publish, close and review opportunities and manage application outcomes. Students can view published opportunities, submit one application per opportunity and track shortlist/interview/selection/rejection status. Eligibility text is currently informational; automated CGPA/programme checks, resume upload/storage, interview scheduling and employer integrations remain open.
+
+
+The institutional workspace includes a live student view for profile, attendance, results, courses, timetable, calendar, fees and placements. Staff can open the attendance marking screen, load only students enrolled in an assigned course, save present/absent/late/excused statuses and explicitly lock the session. College Admins have a user administration screen for account creation and activation/deactivation.
