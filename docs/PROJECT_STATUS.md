@@ -2,6 +2,9 @@
 
 Status reviewed: 27 November 2026  
 Working branch: `know-envi-rebuild`  
+Verified code commit: `68e5f4abca475b2d9a11277834b4151a41a76407`  
+Current branch head: `c20436dba46bf6bef654cd8083ade004afbe4009` (README-only change after the verified code commit)  
+`main` remains at its original base commit: `9942dfb2081d47e333101456afeaeeb0ca35f48a`  
 Repository: `Bharath496/EDU_ONE`
 
 This document supersedes the original audit's snapshot when describing work added after its base commit. The original audit remains useful as a record of the risks found in the prototype.
@@ -31,7 +34,8 @@ The hosted GitHub Pages site remains a static portfolio/demo frontend. It does n
 - Dockerfile, PostgreSQL Compose stack, migration service and one-time first-admin bootstrap script.
 - CI for frontend lint/typecheck/build, the full API test suite, migration validation, Compose configuration and API container build.
 - Service worker restricted to public static assets; navigation and API/dynamic responses are not cached.
-- Demo dashboard student/parent records now use explicit stable fixture IDs rather than display-name matching or a fallback to the first student.
+- Demo dashboard and learner module views (alerts, assignments, attendance, fees and marks) use explicit stable fixture IDs rather than display-name matching or a fallback to the first student.
+- API responses include security headers and private `/v1` responses are marked `Cache-Control: no-store`; institutional login validates the trusted request origin.
 
 ## Verification checkpoints
 
@@ -42,8 +46,9 @@ These are CI results at the named commits, not a claim that every later commit h
 | `d11f600baf2810671e8674988b79fc6363a70103` | Frontend lint, TypeScript check and production build passed |
 | `6bb58a380a195e27244311037a0fb355ae771910` | API suite: 70 passed; Alembic migration validation passed |
 | `9910a3a55c99a8ed5133da8c9d8ca9b116c11b0d` | API suite and migration validation passed; Docker Compose config validation and API image build passed |
+| `68e5f4abca475b2d9a11277834b4151a41a76407` | Full CI passed: frontend lint/typecheck/build; API suite **76 passed**; Alembic migration validation; Compose config; API image build; PostgreSQL + API Compose integration stack reached `/ready` and shut down cleanly |
 
-The most recent fee-payment row-locking change and later service-worker/documentation commits still require their own final CI run to finish. Review the latest [branch Actions runs](https://github.com/Bharath496/EDU_ONE/actions?query=branch%3Aknow-envi-rebuild) before treating the current head as verified.
+The verified code commit includes the fee-payment row locking, service-worker cache restrictions, faculty course-scoped student roster, login-origin validation and API security headers. The current branch head is a README-only documentation commit on top of that verified code. Review the latest [branch Actions runs](https://github.com/Bharath496/EDU_ONE/actions?query=branch%3Aknow-envi-rebuild) for any subsequent changes.
 
 ## Remaining work before a production pilot
 
