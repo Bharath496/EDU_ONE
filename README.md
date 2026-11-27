@@ -35,7 +35,7 @@ No Vercel deployment is required.
 
 ## Demo roles
 
-EDU_ONE now supports the full role set used by the product design:
+The landing page provides quick access to six fictional demo roles:
 
 - Super Admin
 - College Admin
@@ -44,14 +44,9 @@ EDU_ONE now supports the full role set used by the product design:
 - Parent
 - Staff
 
-You can enter immediately from the landing page or use the guided demo flow:
+Choose a role card to enter the browser-local demo workspace. These shortcuts are not institutional accounts and do not authenticate against the database.
 
-1. Select a fictional institution
-2. Select a role
-3. Enter the displayed local demo verification code
-4. Continue to the role-based dashboard
-
-The flow deliberately does **not** pretend that real SSO, SMS or production identity infrastructure is configured.
+The institutional API supports additional staff designations such as HOD, Class Advisor, Principal, Vice Principal, Exam Cell, Accounts, Librarian, Placement Officer, HR, Admissions, Hostel Warden and Transport Coordinator. A College Admin provisions those accounts through the institutional user-management workflow.
 
 ## Extended application
 
