@@ -451,3 +451,8 @@ This initial provisioning workflow sets passwords directly; invitation email, pa
 ## Library circulation API
 
 The versioned library API supports a tenant-scoped book catalogue, stock counts, librarian-controlled issue/return workflows, student loan history, active-loan limits and configurable overdue fines (`LIBRARY_FINE_PER_DAY`, default ₹2/day). Only Librarian or College Admin roles can add books, issue or return copies. Students can view their own loan history; they cannot issue or return books themselves. Fine amounts are recorded, not automatically collected.
+
+
+## Announcements and student support
+
+The API supports institution, department, class and role-targeted announcements with per-user read receipts. HODs and class advisors are restricted to their assigned scopes. Student and parent accounts can raise support tickets for their own or verified linked student profiles, exchange messages and follow progress; Support Staff, Principal, Vice Principal and College Admin roles can manage ticket status. Ticket and announcement actions are audited. Attachments, anonymous reporting, SLA automation and external notification delivery are not yet configured.
