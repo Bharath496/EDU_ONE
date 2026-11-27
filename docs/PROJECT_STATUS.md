@@ -2,7 +2,7 @@
 
 Status reviewed: 27 November 2026  
 Working branch: `know-envi-rebuild`  
-Verified code checkpoints: `12be1a86065d2fff0a28b2afca872d0168b7f8a3` (timetable UI) and `e8ace3cc364c04102e8dd04518262a1da8e94810` (parent timetable API/test). The branch tip also contains documentation and CI-concurrency updates after these code checkpoints.  
+Verified code checkpoints: `12be1a86065d2fff0a28b2afca872d0168b7f8a3` (timetable UI) and `e8ace3cc364c04102e8dd04518262a1da8e94810` (parent timetable API/test). The branch tip also contains a College Admin audit reader and student-support analytics API/dashboard added after these verified checkpoints. Their current-head CI run is queued and has not produced a result yet; treat those two latest features as implemented but not yet verified. Documentation and CI-concurrency updates are also present.  
 `main` remains at its original base commit: `9942dfb2081d47e333101456afeaeeb0ca35f48a`  
 Repository: `Bharath496/EDU_ONE`
 
