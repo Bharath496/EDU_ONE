@@ -6,6 +6,12 @@ The hosted frontend is designed to work at **₹0 required service cost** using 
 
 > EDU_ONE is a serious portfolio system, not a claim that a production student-information platform can safely run from browser storage. A real institutional deployment would need server-side identity, durable storage, tenant isolation, audit logs, privacy controls, secure files, backups, observability and payment-provider integration.
 
+## API safety mode
+
+The FastAPI service currently contains fictional in-memory demo records and demo login identities. **Business/API routes are disabled by default.** The root and health endpoints remain available, but login, student, attendance, fees, exams, library, communication, administration and analytics routes return `503 DEMO_API_DISABLED` unless the developer explicitly opts in.
+
+For local UI/API demonstrations only, start the API with `EDUONE_DEMO_MODE=true` (or `1`) in the environment. Do not enable this flag on a public deployment or use real student, parent, staff, attendance, examination or financial data. This flag is a demo safety lock, not production authentication. A production release still requires verified server-side identity, role and record-level authorization, persistent database migrations, tenant isolation, audit trails, secure file handling, backups and payment-provider verification.
+
 ## Live website
 
 GitHub Pages:
