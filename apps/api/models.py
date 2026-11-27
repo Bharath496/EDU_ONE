@@ -277,3 +277,43 @@ class AssignmentSubmission(Base):
     feedback: Mapped[str | None] = mapped_column(Text)
     graded_by: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     graded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class FeeInvoice(Base):
+    __tablename__ = "fee_invoices"
+    __table_args__ = (
+        Index("ix_fee_invoices_tenant_student_due", "institution_id", "student_profile_id", "due_date"),
+        CheckConstraint("amount > 0", name="ck_fee_invoice_amount_positive"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    institution_id: Mapped[str] = mapped_column(ForeignKey("institutions.id", ondelete="RESTRICT"), nullable=False)
+    student_profile_id: Mapped[str] = mapped_column(ForeignKey("student_profiles.id", ondelete="RESTRICT"), nullable=False)
+    invoice_number: Mapped[str] = mapped_column(String(60), nullable=False, unique=True)
+    fee_type: Mapped[str] = mapped_column(String(80), nullable=False)
+    description: Mapped[str | None] = mapped_column(String(300))
+    amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    due_date: Mapped[date] = mapped_column(Date, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="issued")
+    issued_by: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class FeePayment(Base):
+    __tablename__ = "fee_payments"
+    __table_args__ = (
+        Index("ix_fee_payments_tenant_invoice_status", "institution_id", "invoice_id", "status"),
+        CheckConstraint("amount > 0", name="ck_fee_payment_amount_positive"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    institution_id: Mapped[str] = mapped_column(ForeignKey("institutions.id", ondelete="RESTRICT"), nullable=False)
+    invoice_id: Mapped[str] = mapped_column(ForeignKey("fee_invoices.id", ondelete="RESTRICT"), nullable=False)
+    amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    method: Mapped[str] = mapped_column(String(30), nullable=False)
+    payment_reference: Mapped[str | None] = mapped_column(String(120))
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
+    recorded_by: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    verified_by: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+    verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
