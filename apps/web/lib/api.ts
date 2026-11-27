@@ -469,6 +469,19 @@ class ApiClient {
     return response.data
   }
 
+  async getMyTimetable() {
+    const response = await this.client.get('/v1/timetable/me')
+    return response.data
+  }
+  async getFacultyTimetable() {
+    const response = await this.client.get('/v1/timetable/faculty/me')
+    return response.data
+  }
+  async getInstitutionalCalendar(params?: { start_at?: string; end_at?: string }) {
+    const response = await this.client.get('/v1/calendar', { params })
+    return response.data
+  }
+
   getClient(): AxiosInstance {
     return this.client
   }
