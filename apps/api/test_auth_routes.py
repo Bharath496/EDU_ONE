@@ -128,3 +128,18 @@ def test_logout_revokes_refresh_session(auth_client) -> None:
     assert response.status_code == 204
     after_logout = client.post("/v1/auth/refresh")
     assert after_logout.status_code == 401
+
+
+def test_login_rejects_untrusted_origin(auth_client) -> None:
+    client, _ = auth_client
+    response = client.post(
+        "/v1/auth/login",
+        headers={"Origin": "https://attacker.example"},
+        json={
+            "institution_code": "AUTH01",
+            "email": "student@example.edu",
+            "password": "correct-horse-battery",
+        },
+    )
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Untrusted request origin"
