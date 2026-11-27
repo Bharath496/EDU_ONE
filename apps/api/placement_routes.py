@@ -11,7 +11,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from auth_routes import AuthPrincipal, get_current_principal
-from authorization import AuthorizationError, authorize
+from authorization import AuthorizationError, ROLE_PERMISSIONS, authorize
 from database import get_db
 from models import AuditEvent, PlacementApplication, PlacementOpportunity, StudentProfile, User
 
@@ -83,7 +83,8 @@ def list_opportunities(
     except AuthorizationError as exc:
         raise HTTPException(status_code=403, detail="You cannot view placement opportunities") from exc
     query = select(PlacementOpportunity).where(PlacementOpportunity.institution_id == principal.institution.id)
-    if "placements.manage" not in principal.access_context.permissions if hasattr(principal.access_context, "permissions") else False:
+    can_manage = any("placements.manage" in ROLE_PERMISSIONS.get(role, frozenset()) for role in principal.roles)
+    if not can_manage:
         query = query.where(PlacementOpportunity.status == "published")
     elif status_filter:
         query = query.where(PlacementOpportunity.status == status_filter)
