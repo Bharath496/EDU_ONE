@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, JSON, String, UniqueConstraint
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Index, Integer, JSON, String, UniqueConstraint, CheckConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -129,3 +129,73 @@ class AuditEvent(Base):
     resource_id: Mapped[str | None] = mapped_column(String(36))
     details: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class AcademicCourse(Base):
+    __tablename__ = "academic_courses"
+    __table_args__ = (
+        UniqueConstraint("institution_id", "code", name="uq_course_institution_code"),
+        Index("ix_courses_tenant_department_semester", "institution_id", "department_id", "semester"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    institution_id: Mapped[str] = mapped_column(ForeignKey("institutions.id", ondelete="RESTRICT"), nullable=False)
+    code: Mapped[str] = mapped_column(String(40), nullable=False)
+    title: Mapped[str] = mapped_column(String(180), nullable=False)
+    credits: Mapped[int] = mapped_column(Integer, nullable=False, default=3)
+    department_id: Mapped[str | None] = mapped_column(String(36))
+    semester: Mapped[int] = mapped_column(Integer, nullable=False)
+    class_id: Mapped[str | None] = mapped_column(String(36))
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class CourseEnrollment(Base):
+    __tablename__ = "course_enrollments"
+    __table_args__ = (
+        UniqueConstraint("course_id", "student_profile_id", name="uq_course_student_enrollment"),
+        Index("ix_course_enrollments_tenant_student", "institution_id", "student_profile_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    institution_id: Mapped[str] = mapped_column(ForeignKey("institutions.id", ondelete="RESTRICT"), nullable=False)
+    course_id: Mapped[str] = mapped_column(ForeignKey("academic_courses.id", ondelete="CASCADE"), nullable=False)
+    student_profile_id: Mapped[str] = mapped_column(ForeignKey("student_profiles.id", ondelete="CASCADE"), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="active")
+    enrolled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class AttendanceSession(Base):
+    __tablename__ = "attendance_sessions"
+    __table_args__ = (
+        UniqueConstraint("course_id", "session_date", "period", name="uq_attendance_course_date_period"),
+        Index("ix_attendance_sessions_tenant_date", "institution_id", "session_date"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    institution_id: Mapped[str] = mapped_column(ForeignKey("institutions.id", ondelete="RESTRICT"), nullable=False)
+    course_id: Mapped[str] = mapped_column(ForeignKey("academic_courses.id", ondelete="RESTRICT"), nullable=False)
+    session_date: Mapped[date] = mapped_column(Date, nullable=False)
+    period: Mapped[int] = mapped_column(Integer, nullable=False)
+    topic: Mapped[str | None] = mapped_column(String(180))
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="open")
+    marked_by: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class AttendanceRecord(Base):
+    __tablename__ = "attendance_records"
+    __table_args__ = (
+        UniqueConstraint("session_id", "student_profile_id", name="uq_attendance_session_student"),
+        CheckConstraint("status IN ('present', 'absent', 'late', 'excused')", name="ck_attendance_status"),
+        Index("ix_attendance_records_tenant_student", "institution_id", "student_profile_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    institution_id: Mapped[str] = mapped_column(ForeignKey("institutions.id", ondelete="RESTRICT"), nullable=False)
+    session_id: Mapped[str] = mapped_column(ForeignKey("attendance_sessions.id", ondelete="CASCADE"), nullable=False)
+    student_profile_id: Mapped[str] = mapped_column(ForeignKey("student_profiles.id", ondelete="RESTRICT"), nullable=False)
+    status: Mapped[str] = mapped_column(String(12), nullable=False)
+    remarks: Mapped[str | None] = mapped_column(String(300))
+    marked_by: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    marked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
