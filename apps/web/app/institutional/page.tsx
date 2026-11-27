@@ -112,6 +112,7 @@ export default function InstitutionalWorkspacePage() {
           <div><p className="text-xs font-semibold uppercase tracking-wider text-indigo-600">Institutional workspace</p><h1 className="mt-1 text-xl font-bold text-slate-950">{user?.collegeName || 'EDU_ONE'}</h1><p className="mt-1 text-sm text-slate-500">{user?.name} · {user?.role}</p></div>
           <div className="flex items-center gap-2">
             {user?.role === 'College Admin' && <Link href="/institutional/users" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Manage users</Link>}
+            {['Faculty', 'College Admin', 'HOD', 'Class Advisor'].includes(user?.role || '') && <Link href="/institutional/attendance" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Mark attendance</Link>}
             <Button variant="outline" onClick={signOut} className="gap-2"><LogOut className="h-4 w-4" /> Sign out</Button>
           </div>
         </div>
