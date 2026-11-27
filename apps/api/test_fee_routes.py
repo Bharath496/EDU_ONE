@@ -42,6 +42,7 @@ def fee_client(monkeypatch: pytest.MonkeyPatch):
 
         admin = add_user("admin@fees.edu", "College Admin")
         accounts = add_user("accounts@fees.edu", "Accounts")
+        principal = add_user("principal@fees.edu", "Principal")
         student = add_user("student@fees.edu", "Student")
         parent = add_user("parent@fees.edu", "Parent")
         profile = StudentProfile(
@@ -63,7 +64,7 @@ def fee_client(monkeypatch: pytest.MonkeyPatch):
         db.commit()
         ids = {
             "college": college.id, "admin": admin.id, "accounts": accounts.id,
-            "student": student.id, "parent": parent.id,
+            "principal": principal.id, "student": student.id, "parent": parent.id,
             "profile": profile.id, "invoice": invoice.id,
         }
 
@@ -148,3 +149,10 @@ def test_pending_payment_reserves_invoice_balance(fee_client) -> None:
     assert invoice.status_code == 200
     assert invoice.json()["status"] == "issued"
     assert invoice.json()["outstanding_amount"] == 50000
+
+
+def test_principal_can_read_institution_fee_invoices(fee_client) -> None:
+    client, ids, headers = fee_client
+    response = client.get("/v1/fees/invoices", headers=headers(ids["principal"], "Principal"))
+    assert response.status_code == 200
+    assert response.json()["total"] == 1
