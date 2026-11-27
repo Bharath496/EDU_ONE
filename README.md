@@ -478,3 +478,6 @@ The live Library screen lets Librarians/College Admins add catalogue items, issu
 
 
 The Support workspace is available to students, parents with verified links, Support Staff, College Admin, Principal and Vice Principal. It supports ticket creation, private message threads and status/resolution updates. Support attachments and external notification delivery are not enabled.
+
+
+The live Academics workspace gives students access to published exams, assignments and published marks, with text-based assignment submission. Faculty can create assignments, review submissions and enter course-scoped marks. Exam Cell/College Admin can create and publish exams and publish marks; results remain hidden from students until publication. File attachments, exam seating/hall-ticket generation and grade-point/CGPA calculation are not yet integrated.
