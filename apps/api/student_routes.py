@@ -67,7 +67,7 @@ def _student_query(principal: AuthPrincipal):
     )
     roles = context.roles
 
-    if {"College Admin", "Principal", "Vice Principal", "Admissions"}.intersection(roles):
+    if {"College Admin", "Principal", "Vice Principal", "Admissions", "Accounts"}.intersection(roles):
         authorize(context, permission="students.read", resource_institution_id=principal.institution.id)
         return query
     if "HOD" in roles:
