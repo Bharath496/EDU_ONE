@@ -29,16 +29,17 @@ from placement_routes import router as placement_router
 
 app = FastAPI(
     title="EDU_ONE API",
-    version="0.5.0",
+    version="0.6.0",
     description=(
-        "Zero-cost in-memory demo API for the EDU_ONE portfolio project. "
-        "It is intentionally not a production student-information system."
+        "EDU_ONE API. Versioned institutional routes use PostgreSQL-backed identity, "
+        "tenant-scoped records and server-side authorization. Legacy unversioned demo "
+        "routes are disabled unless explicitly enabled for isolated local demonstrations."
     ),
 )
 
-# The current API is a fictional, in-memory demo. Keep every business route
-# disabled unless a developer explicitly opts into demo mode. This prevents
-# accidental exposure of demo identities and mutable demo records on a deploy.
+# Legacy unversioned endpoints are fictional, in-memory demo routes. Keep them
+# disabled unless a developer explicitly opts into local demo mode. Versioned
+# /v1 routes are separate and enforce database-backed authentication/authorization.
 DEMO_MODE_ENV = "EDUONE_DEMO_MODE"
 DEMO_SAFE_PATHS = {"/", "/health", "/ready", "/openapi.json", "/docs", "/docs/oauth2-redirect", "/redoc"}
 
