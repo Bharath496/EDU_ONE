@@ -50,4 +50,4 @@ jobs:
         run: pip install -r apps/api/requirements.txt
 
       - name: Test API
-        run: python -m pytest apps/api/test_main.py -q
+        run: python -m pytest apps/api -q
