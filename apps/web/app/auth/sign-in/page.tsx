@@ -25,7 +25,7 @@ export default function InstitutionalSignInPage() {
     try {
       const session = await api.login(institutionCode.trim(), email.trim(), password)
       setInstitutionalAuth(session.user as User, session.access_token)
-      router.replace('/dashboard')
+      router.replace('/institutional')
     } catch (err: any) {
       const message = err?.response?.data?.detail
       setError(typeof message === 'string' ? message : 'Unable to sign in. Check the API connection and your credentials.')
