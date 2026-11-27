@@ -98,9 +98,11 @@ export default function DashboardPage() {
     )
   }
 
-  const matchedStudent =
-    students.find((item) => item.name.toLowerCase() === user.name.toLowerCase()) ??
-    students[0]
+  // Demo student/parent records are linked by immutable fixture ID, never by
+  // display name or a fallback to an unrelated student's first record.
+  const matchedStudent = user.studentId
+    ? students.find((item) => item.id === user.studentId)
+    : undefined
 
   if (user.role === 'Student' || user.role === 'Parent') {
     const ownFees = matchedStudent ? fees.filter((item) => item.studentId === matchedStudent.id) : []
