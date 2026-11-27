@@ -14,7 +14,7 @@ def upgrade() -> None:
         sa.Column("id", sa.String(36), primary_key=True),
         sa.Column("institution_id", sa.String(36), sa.ForeignKey("institutions.id", ondelete="RESTRICT"), nullable=False),
         sa.Column("student_profile_id", sa.String(36), sa.ForeignKey("student_profiles.id", ondelete="RESTRICT"), nullable=False),
-        sa.Column("invoice_number", sa.String(60), nullable=False, unique=True),
+        sa.Column("invoice_number", sa.String(60), nullable=False),
         sa.Column("fee_type", sa.String(80), nullable=False),
         sa.Column("description", sa.String(300)),
         sa.Column("amount", sa.Numeric(10, 2), nullable=False),
@@ -23,6 +23,7 @@ def upgrade() -> None:
         sa.Column("issued_by", sa.String(36), sa.ForeignKey("users.id", ondelete="RESTRICT"), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.CheckConstraint("amount > 0", name="ck_fee_invoice_amount_positive"),
+        sa.UniqueConstraint("institution_id", "invoice_number", name="uq_fee_invoice_tenant_number"),
     )
     op.create_index("ix_fee_invoices_tenant_student_due", "fee_invoices", ["institution_id", "student_profile_id", "due_date"])
     op.create_table(
