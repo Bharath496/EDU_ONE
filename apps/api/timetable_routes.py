@@ -204,19 +204,21 @@ def create_timetable_slot(
         times_overlap = existing.start_time < payload.end_time and existing.end_time > payload.start_time
         return dates_overlap and times_overlap
 
-    conflicts = db.scalars(select(TimetableSlot).where(
+    conflict_filters = [
         TimetableSlot.institution_id == principal.institution.id,
         TimetableSlot.weekday == payload.weekday,
         TimetableSlot.is_active.is_(True),
         or_(TimetableSlot.effective_to.is_(None), TimetableSlot.effective_to >= payload.effective_from),
-        or_(payload.effective_to is None, TimetableSlot.effective_from <= payload.effective_to),
         TimetableSlot.start_time < payload.end_time,
         TimetableSlot.end_time > payload.start_time,
         or_(
             TimetableSlot.class_id == payload.class_id,
             TimetableSlot.faculty_user_id == payload.faculty_user_id,
         ),
-    )).all()
+    ]
+    if payload.effective_to is not None:
+        conflict_filters.append(TimetableSlot.effective_from <= payload.effective_to)
+    conflicts = db.scalars(select(TimetableSlot).where(*conflict_filters)).all()
     if any(row.class_id == payload.class_id for row in conflicts):
         raise HTTPException(status_code=409, detail="This class already has a timetable slot at that time")
     if any(row.faculty_user_id == payload.faculty_user_id for row in conflicts):
