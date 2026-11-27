@@ -123,3 +123,11 @@ def test_parent_can_read_linked_invoice_but_not_unlinked_invoice(fee_client) -> 
     response = client.get("/v1/fees/invoices", headers=headers(ids["parent"], "Parent"))
     assert response.status_code == 200
     assert response.json()["total"] == 1
+
+
+
+def test_accounts_can_read_student_billing_identities(fee_client) -> None:
+    client, ids, headers = fee_client
+    response = client.get("/v1/students", headers=headers(ids["accounts"], "Accounts"))
+    assert response.status_code == 200
+    assert response.json()["items"][0]["id"] == ids["profile"]
