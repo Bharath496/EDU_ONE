@@ -444,6 +444,10 @@ class ApiClient {
     const response = await this.client.get('/v1/users', { params })
     return response.data
   }
+  async getAuditEvents(params?: { action?: string; resource_type?: string; page?: number; limit?: number }) {
+    const response = await this.client.get('/v1/audit', { params })
+    return response.data
+  }
   async createInstitutionalUser(payload: { email: string; full_name: string; password: string; roles: string[]; department_id?: string }) {
     const response = await this.client.post('/v1/users', payload)
     return response.data
