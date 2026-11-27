@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/Card'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/lib/auth-store'
 
-const roles = ['Student', 'Parent', 'Faculty', 'HOD', 'Class Advisor', 'Principal', 'Vice Principal', 'Exam Cell', 'Accounts', 'Librarian', 'Placement Officer', 'HR', 'Admissions', 'Hostel Warden', 'Transport Coordinator']
+const roles = ['Student', 'Parent', 'Faculty', 'HOD', 'Class Advisor', 'Principal', 'Vice Principal', 'Exam Cell', 'Accounts', 'Librarian', 'Placement Officer', 'HR', 'Admissions', 'Hostel Warden', 'Transport Coordinator', 'Support Staff']
 
 export default function InstitutionalUsersPage() {
   const router = useRouter()
