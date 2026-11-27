@@ -31,6 +31,7 @@ export interface User {
   collegeName: string
   avatar?: string
   regNo?: string
+  studentId?: string
   department?: string
   semester?: number
 }
