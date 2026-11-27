@@ -1,8 +1,8 @@
-"""Create initial tenant-aware identity, student-link and audit tables.
+"""Create initial tenant-aware identity, student-link, class-scope and audit tables.
 
-This first migration uses the checked-in SQLAlchemy metadata as its source of
-truth. Once a database has been initialized, subsequent migrations should use
-explicit Alembic operations and must never rewrite this revision.
+This first migration captures the initial schema, including student class scope.
+Subsequent migrations must use explicit Alembic operations and must never rewrite
+this revision after it has been applied to a persistent database.
 """
 from __future__ import annotations
 
