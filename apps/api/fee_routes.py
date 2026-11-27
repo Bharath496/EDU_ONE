@@ -191,7 +191,14 @@ def create_payment_request(
     principal: Annotated[AuthPrincipal, Depends(get_current_principal)],
     db: Annotated[Session, Depends(get_db)],
 ) -> dict:
-    invoice = _load_invoice(db, principal, invoice_id)
+    # Serialize balance checks for this invoice so simultaneous requests
+    # cannot reserve more than the remaining balance.
+    invoice = db.scalar(select(FeeInvoice).where(
+        FeeInvoice.id == invoice_id,
+        FeeInvoice.institution_id == principal.institution.id,
+    ).with_for_update())
+    if invoice is None:
+        raise HTTPException(status_code=404, detail="Fee invoice not found")
     _authorize_invoice_read(principal, invoice, db)
     if invoice.status in {"paid", "cancelled"}:
         raise HTTPException(status_code=409, detail="This invoice cannot accept another payment")
@@ -267,7 +274,7 @@ def verify_payment(
     payment = db.scalar(select(FeePayment).where(
         FeePayment.id == payment_id,
         FeePayment.institution_id == principal.institution.id,
-    ))
+    ).with_for_update())
     if payment is None:
         raise HTTPException(status_code=404, detail="Payment request not found")
     if payment.status != "pending":
