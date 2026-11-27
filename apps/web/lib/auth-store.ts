@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { User, Session } from './types'
+import { api } from './api'
 
 interface AuthState {
   user: User | null
@@ -7,8 +8,9 @@ interface AuthState {
   refreshToken: string | null
   isAuthenticated: boolean
   isLoading: boolean
-  hydrate: () => void
+  hydrate: () => Promise<void>
   setAuth: (session: Session) => void
+  setInstitutionalAuth: (user: User, token: string) => void
   setUser: (user: User) => void
   clearAuth: () => void
   setLoading: (loading: boolean) => void
@@ -23,55 +25,83 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   isAuthenticated: false,
   isLoading: true,
 
-  hydrate: () => {
+  hydrate: async () => {
     if (typeof window === 'undefined') return
+    set({ isLoading: true })
     try {
-      const storedUser = localStorage.getItem('user')
-      const storedToken = localStorage.getItem('access_token')
-      const storedRefreshToken = localStorage.getItem('refresh_token')
-      if (storedUser && storedToken) {
+      const demoUser = localStorage.getItem('eduone-demo-user')
+      if (demoUser) {
+        const user = JSON.parse(demoUser) as User
         set({
-          user: JSON.parse(storedUser),
-          token: storedToken,
-          refreshToken: storedRefreshToken,
+          user,
+          token: 'demo-session',
+          refreshToken: null,
           isAuthenticated: true,
           isLoading: false,
         })
         return
       }
+
+      const token = await api.refreshSession()
+      const user = await api.getCurrentUser() as User
+      set({
+        user,
+        token,
+        refreshToken: null,
+        isAuthenticated: true,
+        isLoading: false,
+      })
     } catch {
-      localStorage.removeItem('user')
+      api.setAccessToken(null)
       localStorage.removeItem('access_token')
       localStorage.removeItem('refresh_token')
+      localStorage.removeItem('user')
+      localStorage.removeItem('eduone-demo-user')
+      api.setAccessToken(null)
+      set({
+        user: null,
+        token: null,
+        refreshToken: null,
+        isAuthenticated: false,
+        isLoading: false,
+      })
     }
-    set({
-      user: null,
-      token: null,
-      refreshToken: null,
-      isAuthenticated: false,
-      isLoading: false,
-    })
   },
 
   setAuth: (session: Session) => {
+    // This setter is reserved for the clearly labelled local demo accounts.
+    api.setAccessToken(null)
     set({
       user: session.user,
-      token: session.token,
-      refreshToken: session.refreshToken,
+      token: 'demo-session',
+      refreshToken: null,
       isAuthenticated: true,
       isLoading: false,
     })
     if (typeof window !== 'undefined') {
-      localStorage.setItem('access_token', session.token)
-      localStorage.setItem('refresh_token', session.refreshToken)
-      localStorage.setItem('user', JSON.stringify(session.user))
+      localStorage.setItem('eduone-demo-user', JSON.stringify(session.user))
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('refresh_token')
+      localStorage.removeItem('user')
     }
+  },
+
+  setInstitutionalAuth: (user: User, token: string) => {
+    localStorage.removeItem('eduone-demo-user')
+    api.setAccessToken(token)
+    set({
+      user,
+      token,
+      refreshToken: null,
+      isAuthenticated: true,
+      isLoading: false,
+    })
   },
 
   setUser: (user: User) => {
     set({ user })
     if (typeof window !== 'undefined') {
-      localStorage.setItem('user', JSON.stringify(user))
+      if (localStorage.getItem('eduone-demo-user')) localStorage.setItem('eduone-demo-user', JSON.stringify(user))
     }
   },
 
