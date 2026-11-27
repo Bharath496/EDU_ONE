@@ -17,6 +17,7 @@ from database import get_engine
 
 from auth_routes import router as institutional_auth_router
 from audit_routes import router as audit_router
+from analytics_routes import router as analytics_router
 from student_routes import router as student_router
 from academic_routes import attendance_router, courses_router
 from assessment_routes import assignment_router, exam_router, result_router
@@ -87,6 +88,7 @@ app.add_middleware(
 
 app.include_router(institutional_auth_router)
 app.include_router(audit_router)
+app.include_router(analytics_router)
 app.include_router(student_router)
 app.include_router(courses_router)
 app.include_router(attendance_router)
