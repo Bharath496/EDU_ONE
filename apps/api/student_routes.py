@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from auth_routes import AuthPrincipal, get_current_principal
 from authorization import AuthorizationError, authorize
 from database import get_db
-from models import AuditEvent, StudentProfile, User
+from models import AuditEvent, CourseEnrollment, StudentProfile, User
 
 router = APIRouter(prefix="/v1/students", tags=["students"])
 
@@ -82,15 +82,38 @@ def _student_query(principal: AuthPrincipal):
     if "Parent" in roles:
         ids = context.linked_student_ids
         return query.where(StudentProfile.id.in_(ids)) if ids else query.where(StudentProfile.id == "__no_matching_scope__")
+    if "Faculty" in roles:
+        courses = _scope_ids(principal, "course", "students.read")
+        if not courses:
+            return query.where(StudentProfile.id == "__no_matching_scope__")
+        return query.join(
+            CourseEnrollment,
+            CourseEnrollment.student_profile_id == StudentProfile.id,
+        ).where(
+            CourseEnrollment.institution_id == principal.institution.id,
+            CourseEnrollment.course_id.in_(courses),
+            CourseEnrollment.status == "active",
+        ).distinct()
     raise HTTPException(status_code=403, detail="You do not have access to student records")
 
 
-def _authorize_profile(principal: AuthPrincipal, profile: StudentProfile) -> None:
+def _authorize_profile(principal: AuthPrincipal, profile: StudentProfile, db: Session) -> None:
     context = principal.access_context
     if "HOD" in context.roles:
         scope_type, scope_id = "department", profile.department_id
     elif "Class Advisor" in context.roles:
         scope_type, scope_id = "class", profile.class_id
+    elif "Faculty" in context.roles:
+        courses = _scope_ids(principal, "course", "students.read")
+        scope_id = db.scalar(select(CourseEnrollment.course_id).where(
+            CourseEnrollment.institution_id == principal.institution.id,
+            CourseEnrollment.student_profile_id == profile.id,
+            CourseEnrollment.course_id.in_(courses),
+            CourseEnrollment.status == "active",
+        ).limit(1)) if courses else None
+        scope_type = "course"
+        if scope_id is None:
+            raise HTTPException(status_code=403, detail="You do not have access to this student record")
     else:
         scope_type, scope_id = None, None
     try:
@@ -132,7 +155,7 @@ def list_students(
         .limit(limit)
     ).all()
     for profile in rows:
-        _authorize_profile(principal, profile)
+        _authorize_profile(principal, profile, db)
     return {"items": [_serialize(db, profile) for profile in rows], "total": total, "page": page, "limit": limit}
 
 
@@ -166,7 +189,7 @@ def get_student(
     ))
     if profile is None:
         raise HTTPException(status_code=404, detail="Student profile not found")
-    _authorize_profile(principal, profile)
+    _authorize_profile(principal, profile, db)
     return _serialize(db, profile)
 
 
