@@ -131,3 +131,20 @@ def test_accounts_can_read_student_billing_identities(fee_client) -> None:
     response = client.get("/v1/students", headers=headers(ids["accounts"], "Accounts"))
     assert response.status_code == 200
     assert response.json()["items"][0]["id"] == ids["profile"]
+
+
+def test_pending_payment_reserves_invoice_balance(fee_client) -> None:
+    client, ids, headers = fee_client
+    student_headers = headers(ids["student"], "Student")
+    first = client.post(f"/v1/fees/invoices/{ids['invoice']}/payments", headers=student_headers, json={
+        "amount": 30000, "method": "upi", "payment_reference": "PENDING-ONE",
+    })
+    assert first.status_code == 201
+    second = client.post(f"/v1/fees/invoices/{ids['invoice']}/payments", headers=student_headers, json={
+        "amount": 30000, "method": "bank_transfer", "payment_reference": "PENDING-TWO",
+    })
+    assert second.status_code == 422
+    invoice = client.get(f"/v1/fees/invoices/{ids['invoice']}", headers=student_headers)
+    assert invoice.status_code == 200
+    assert invoice.json()["status"] == "issued"
+    assert invoice.json()["outstanding_amount"] == 50000
