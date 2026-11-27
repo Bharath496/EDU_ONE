@@ -6,11 +6,16 @@ The hosted frontend is designed to work at **₹0 required service cost** using 
 
 > EDU_ONE is a serious portfolio system, not a claim that a production student-information platform can safely run from browser storage. A real institutional deployment would need server-side identity, durable storage, tenant isolation, audit logs, privacy controls, secure files, backups, observability and payment-provider integration.
 
-## API safety mode
+## API and demo safety modes
 
-The FastAPI service currently contains fictional in-memory demo records and demo login identities. **Business/API routes are disabled by default.** The root and health endpoints remain available, but login, student, attendance, fees, exams, library, communication, administration and analytics routes return `503 DEMO_API_DISABLED` unless the developer explicitly opts in.
+EDU_ONE now has two deliberately separate backends:
 
-For local UI/API demonstrations only, start the API with `EDUONE_DEMO_MODE=true` (or `1`) in the environment. Do not enable this flag on a public deployment or use real student, parent, staff, attendance, examination or financial data. This flag is a demo safety lock, not production authentication. A production release still requires verified server-side identity, role and record-level authorization, persistent database migrations, tenant isolation, audit trails, secure file handling, backups and payment-provider verification.
+- **Portfolio demo:** fictional browser-local records and legacy in-memory FastAPI routes. The legacy routes are disabled by default. Enable `EDUONE_DEMO_MODE=true` only for an isolated local demo; never expose that mode publicly.
+- **Institutional API:** versioned `/v1` routes backed by SQLAlchemy and PostgreSQL. These routes use password-verified accounts, short-lived access tokens, rotating HttpOnly refresh cookies, tenant-aware records, server-side role/scope checks and audit events.
+
+The institutional API requires `DATABASE_URL` and a strong `JWT_SECRET_KEY`. Run the migrations before using it. The institutional sign-in screen requires an account provisioned by the first College Admin. No real college records, payment provider or production identity service is configured in the hosted GitHub Pages demo.
+
+**Do not use the browser-local demo workspace for real institutional records.**
 
 ## Live website
 
@@ -218,49 +223,30 @@ Permission changes immediately affect the route guard, sidebar, command palette 
 
 ## Mobile, installability and offline behavior
 
-The web app includes:
+The web app includes responsive desktop/tablet/mobile layouts, role-aware mobile navigation, a collapsible sidebar, command palette, installable manifest and service worker.
 
-- responsive desktop/tablet/mobile layouts
-- role-aware mobile bottom navigation
-- collapsible desktop sidebar
-- command palette with Ctrl/Cmd + K
-- installable web-app manifest
-- service worker
-- same-origin cache fallback for previously visited resources
-
-The service worker is a portfolio offline layer, not a replacement for production synchronization or conflict handling.
+The service worker caches only public static build assets and the public app icon/manifest. It bypasses navigation requests and all API/dynamic data requests so authenticated student, staff, examination and financial responses are not stored in the shared service-worker cache. Offline mode does not imply that private records are available offline.
 
 ## FastAPI backend
 
-The API lives in:
+The API lives in `apps/api`. It contains both the explicitly disabled legacy demo endpoints and the database-backed institutional API under `/v1`.
 
-```text
-apps/api/main.py
-```
+The institutional API includes:
 
-Current demo API version: **0.5.0**
+- institution-scoped users, roles, staff assignments and verified parent/student links
+- password hashing, short-lived access tokens, rotating/revocable refresh sessions and HttpOnly cookies
+- student profiles and tenant-aware course catalog/enrolments
+- attendance sessions, records and locking
+- exams, marks entry/publication, assignments, submissions and grading
+- fee invoices and pending payment requests with finance-side manual verification
+- library catalogue, loans, returns and overdue fine records
+- announcements, per-user read receipts, support tickets and messages
+- timetable, academic calendar and placement opportunities
+- audit events and database readiness checks
 
-Implemented API areas include:
+PostgreSQL schema changes are managed with Alembic. The API can be run locally with Docker Compose; see [Local development](docs/LOCAL_DEVELOPMENT.md).
 
-- health
-- demo authentication and refresh
-- Students CRUD
-- Faculty
-- Academics / courses CRUD
-- Attendance + bulk attendance
-- Exams
-- Assignments + submissions
-- Fees + payment simulation
-- Communication messages + read state
-- Notices
-- Library issue/return
-- Support tickets
-- Reports
-- Super Admin colleges/users/analytics
-- Settings
-- explainable student-risk analytics
-
-The API is intentionally **in-memory**. Restarting it resets API-side mutations.
+The fee workflow does not process money. A submitted UPI/bank/cash reference remains pending until authorized Accounts staff verify it. Payment gateway checkout, signed webhooks and reconciliation are not configured. Password reset email, MFA, login throttling, secure document storage, external notifications and a production deployment are also outstanding.
 
 ## Technology
 
@@ -276,10 +262,11 @@ The API is intentionally **in-memory**. Restarting it resets API-side mutations.
 
 ### API
 
-- FastAPI
-- Pydantic
-- Uvicorn
-- Pytest
+- FastAPI and Pydantic
+- SQLAlchemy 2.x and Alembic migrations
+- PostgreSQL for the institutional data store
+- PBKDF2 password hashing and signed short-lived access tokens
+- Pytest API, authorization and migration checks
 
 ### Engineering
 
@@ -292,49 +279,50 @@ The API is intentionally **in-memory**. Restarting it resets API-side mutations.
 
 ## Run locally
 
-### Frontend
+### Institutional API + PostgreSQL
+
+The recommended local setup uses Docker Compose to start PostgreSQL, apply migrations and launch FastAPI:
+
+```bash
+cp .env.example .env
+# Edit .env: set a long URL-safe PostgreSQL password and a JWT secret of 32+ random bytes.
+docker compose up --build -d
+```
+
+Create the first administrator using the one-time bootstrap command and the environment variables documented in [Local development](docs/LOCAL_DEVELOPMENT.md). Then start the frontend:
 
 ```bash
 npm --prefix apps/web install
-npm run dev:web
+NEXT_PUBLIC_API_URL=http://localhost:8000 npm run dev:web
 ```
 
-Open:
+Open `http://localhost:3000` and choose **Institution sign in**. The institutional API is available at `http://localhost:8000`; API docs are at `/docs`.
 
-```text
-http://localhost:3000
-```
+### Portfolio demo
 
-### API
-
-```bash
-pip install -r apps/api/requirements.txt
-npm run dev:api
-```
-
-API docs:
-
-```text
-http://localhost:8000/docs
-```
-
-Optional API configuration:
-
-```text
-NEXT_PUBLIC_API_URL=http://localhost:8000
-```
+The landing page also offers fictional local demo roles. They are separate from institution accounts and do not prove or provide institutional authentication. The legacy in-memory API routes remain disabled unless `EDUONE_DEMO_MODE=true` is explicitly set for a local demo.
 
 ## Validate
 
+Run the frontend checks:
+
 ```bash
 npm --prefix apps/web install
+npm run lint:web
 npm run typecheck:web
 npm run build:web
-pip install -r apps/api/requirements.txt
-npm run test:api
 ```
 
-GitHub Actions runs these checks automatically.
+Run the complete API suite and validate every database migration against SQLite:
+
+```bash
+pip install -r apps/api/requirements.txt
+python -m pytest apps/api -q
+cd apps/api
+DATABASE_URL=sqlite:///./ci.db alembic upgrade head
+```
+
+GitHub Actions runs frontend lint/typecheck/build, the full API test suite and migration validation on the development branch and pull requests.
 
 ## GitHub Pages deployment
 
@@ -387,22 +375,22 @@ EDU_ONE/
 
 ## Production boundary
 
-Before real institutional use, at minimum add:
+The institutional API is a development foundation, not a production-ready college ERP. Before real institutional use, complete an independent security review and operational readiness work, including:
 
-1. server-side authentication and authorization
-2. durable relational database and migrations
-3. strict tenant isolation
-4. authorization checks on every data mutation
-5. audit logs
-6. encrypted secret management
-7. secure document/file storage
-8. rate limiting
-9. payment-provider webhooks and reconciliation
-10. privacy, consent and retention policies
-11. backups and disaster recovery
-12. observability and incident response
-13. accessibility audit
-14. security review and penetration testing
+1. persistent login throttling/lockout, password reset/invitation delivery and optional MFA
+2. verification of tenant boundaries and resource scopes across every route and database relationship
+3. production PostgreSQL hosting, encrypted backups and tested restore procedures
+4. HTTPS, secure same-site frontend/API cookie deployment, managed secrets and monitoring
+5. private file storage with type/size validation, malware scanning and short-lived access
+6. verified payment-provider checkout/webhooks and finance reconciliation
+7. privacy notices, consent, retention/deletion rules and institutional data-processing agreements
+8. accessible UI review, end-to-end workflows and load testing
+9. human review for academic-risk analytics; no automated high-stakes student decisions
+10. production deployment and incident-response runbooks
+
+GitHub Pages hosts only the static frontend. It does not host FastAPI or PostgreSQL. A real institutional deployment needs a separately hosted API and database, with the frontend/API configured on a compatible same-site domain for secure refresh cookies.
+
+See [Local development](docs/LOCAL_DEVELOPMENT.md) for the supported development setup and the repository's remaining boundaries.
 
 ## License
 
